@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+smartcli-web:
+  history-file: ${user.home}/.smartcli-web/history.json
+  max-history: 200
+  allowed-origins:
+    - http://localhost:5173
+    - http://127.0.0.1:5173
+
+spring:
+  application:
+    name: smartcli-web-backend
