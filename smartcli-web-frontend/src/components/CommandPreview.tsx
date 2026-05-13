@@ -3,10 +3,11 @@ import { useState } from 'react';
 interface Props {
   command: string;
   hasUnfilled: boolean;
+  isFreeForm?: boolean;
   onSave: () => void;
 }
 
-export function CommandPreview({ command, hasUnfilled, onSave }: Props) {
+export function CommandPreview({ command, hasUnfilled, isFreeForm = false, onSave }: Props) {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -34,6 +35,11 @@ export function CommandPreview({ command, hasUnfilled, onSave }: Props) {
         {hasUnfilled && (
           <span className="text-amber-300 normal-case font-normal">
             placeholders still empty — fill them above
+          </span>
+        )}
+        {!hasUnfilled && isFreeForm && (
+          <span className="text-sky-300 normal-case font-normal">
+            free-form — saved as typed
           </span>
         )}
       </div>

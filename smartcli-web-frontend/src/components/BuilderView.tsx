@@ -96,6 +96,12 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
     return names.some((n) => !values[n] || !values[n].trim());
   }, [activeTemplate, values]);
 
+  // Free-form fallback: when nothing in the catalog matches, treat the raw
+  // input as the command so Copy / Save still work (e.g. `source ~/.bashrc && claude`).
+  const trimmedQuery = query.trim();
+  const isFreeForm = !activeTemplate && trimmedQuery.length > 0;
+  const effectiveCommand = activeTemplate ? generated : trimmedQuery;
+
   const onSelectSuggestion = useCallback((s: Suggestion) => {
     setActiveTemplate(s.text);
     setActiveCategory(s.category);
@@ -108,14 +114,14 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
   }, []);
 
   const onSaveHistory = useCallback(async () => {
-    if (!generated) return;
+    if (!effectiveCommand) return;
     try {
-      const entry = await api.history.add(generated, activeCategory || 'misc');
+      const entry = await api.history.add(effectiveCommand, activeCategory || 'misc');
       setHistory((prev) => [entry, ...prev.filter((p) => p.command !== entry.command)]);
     } catch {
       // ignore
     }
-  }, [generated, activeCategory]);
+  }, [effectiveCommand, activeCategory]);
 
   const onReuse = useCallback((entry: HistoryEntry) => {
     setActiveTemplate(entry.command);
@@ -198,8 +204,9 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
         />
 
         <CommandPreview
-          command={generated}
+          command={effectiveCommand}
           hasUnfilled={hasUnfilled}
+          isFreeForm={isFreeForm}
           onSave={onSaveHistory}
         />
       </main>
