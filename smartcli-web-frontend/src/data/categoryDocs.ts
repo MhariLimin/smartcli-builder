@@ -20,6 +20,11 @@ export const CATEGORY_DOCS: Record<string, CategoryDoc> = {
     blurb: "Rust's package manager and build tool.",
     docsUrl: 'https://doc.rust-lang.org/cargo/commands/index.html'
   },
+  claude: {
+    label: 'Claude Code',
+    blurb: "Anthropic's terminal CLI for agentic coding sessions.",
+    docsUrl: 'https://docs.claude.com/en/docs/claude-code/overview'
+  },
   conda: {
     label: 'Conda',
     blurb: 'Cross-platform Python/data-science environment manager.',
@@ -199,6 +204,11 @@ export const CATEGORY_DOCS: Record<string, CategoryDoc> = {
     label: 'sed',
     blurb: 'Stream editor for text transformations.',
     docsUrl: 'https://www.gnu.org/software/sed/manual/sed.html'
+  },
+  shell: {
+    label: 'Shell built-ins',
+    blurb: 'POSIX/bash/zsh built-ins — source, export, alias, env, history.',
+    docsUrl: 'https://www.gnu.org/software/bash/manual/bash.html#Shell-Builtin-Commands'
   },
   ssh: {
     label: 'OpenSSH',
