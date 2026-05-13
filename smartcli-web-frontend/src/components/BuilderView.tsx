@@ -151,6 +151,16 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
     if (!v.trim()) {
       setActiveTemplate('');
       setActiveCategory('');
+      return;
+    }
+    // If the user edits the input away from the picked template, drop the
+    // template lock so the preview reflects the edit (otherwise `generated`
+    // stays pinned to the originally chosen template). EXTENSION picks set
+    // the query to `<text> ` with a trailing space; treat that as "still on
+    // the picked template" so the suggestion flow keeps working.
+    if (activeTemplate && v !== activeTemplate && v !== activeTemplate + ' ') {
+      setActiveTemplate('');
+      setActiveCategory('');
     }
   };
 
