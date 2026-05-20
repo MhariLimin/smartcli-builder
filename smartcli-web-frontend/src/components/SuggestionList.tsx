@@ -4,6 +4,9 @@ interface Props {
   suggestions: Suggestion[];
   loading: boolean;
   onSelect: (suggestion: Suggestion) => void;
+  // When provided and `suggestions` is empty, render these as a "Try one of
+  // these" starter set so the first-load UX has something useful to click.
+  starters?: Suggestion[];
 }
 
 const categoryColors: Record<string, string> = {
@@ -26,9 +29,19 @@ const categoryColors: Record<string, string> = {
   containerd: 'bg-teal-900/60 text-teal-200 border-teal-700'
 };
 
-export function SuggestionList({ suggestions, loading, onSelect }: Props) {
+export function SuggestionList({ suggestions, loading, onSelect, starters }: Props) {
   if (loading) {
     return <div className="text-slate-400 px-4 py-3">Loading suggestions…</div>;
+  }
+  if (suggestions.length === 0 && starters && starters.length > 0) {
+    return (
+      <div>
+        <div className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wide text-slate-500">
+          Try one of these to get started
+        </div>
+        {renderList(starters, onSelect)}
+      </div>
+    );
   }
   if (suggestions.length === 0) {
     return (
@@ -38,9 +51,13 @@ export function SuggestionList({ suggestions, loading, onSelect }: Props) {
       </div>
     );
   }
+  return renderList(suggestions, onSelect);
+}
+
+function renderList(items: Suggestion[], onSelect: (s: Suggestion) => void) {
   return (
     <ul className="divide-y divide-slate-800 max-h-96 overflow-auto">
-      {suggestions.map((s, i) => {
+      {items.map((s, i) => {
         const colorClass = categoryColors[s.category] ?? 'bg-slate-800 text-slate-200 border-slate-700';
         return (
           <li

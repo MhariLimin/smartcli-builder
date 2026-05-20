@@ -8,6 +8,54 @@ import type { HistoryEntry, PlaceholderInfo, Suggestion } from '../types';
 
 const PLACEHOLDER_RE = /<([^>]+)>/g;
 
+// Shown when the input is empty so first-time users see something to click
+// instead of a "no suggestions" message. These commands are real catalog
+// entries; clicking one drives the same onSelect flow as a backend suggestion.
+const STARTER_SUGGESTIONS: Suggestion[] = [
+  {
+    text: 'kubectl get pods -n <namespace>',
+    description: 'List pods in a namespace',
+    category: 'kubectl',
+    placeholders: ['namespace'],
+    kind: 'TEMPLATE'
+  },
+  {
+    text: 'docker ps',
+    description: 'List running containers',
+    category: 'docker',
+    placeholders: [],
+    kind: 'TEMPLATE'
+  },
+  {
+    text: 'git status',
+    description: 'Show working tree status',
+    category: 'git',
+    placeholders: [],
+    kind: 'TEMPLATE'
+  },
+  {
+    text: 'git log --oneline -n 20',
+    description: 'Recent commits, one line each',
+    category: 'git',
+    placeholders: [],
+    kind: 'TEMPLATE'
+  },
+  {
+    text: 'source ~/.bashrc',
+    description: 'Reload bash configuration',
+    category: 'shell',
+    placeholders: [],
+    kind: 'TEMPLATE'
+  },
+  {
+    text: 'claude',
+    description: 'Start the Claude Code CLI',
+    category: 'claude',
+    placeholders: [],
+    kind: 'TEMPLATE'
+  }
+];
+
 function extractPlaceholderNames(template: string): string[] {
   const names: string[] = [];
   for (const m of template.matchAll(PLACEHOLDER_RE)) {
@@ -48,7 +96,7 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
     setActiveTemplate(initialTemplate);
     setActiveCategory(initialCategory);
     setValues({});
-    setShowSuggestions(false);
+    setShowSuggestions(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetSignal]);
 
@@ -192,6 +240,7 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
               suggestions={suggestions}
               loading={loading}
               onSelect={onSelectSuggestion}
+              starters={!query.trim() ? STARTER_SUGGESTIONS : undefined}
             />
           )}
           {!showSuggestions && (
