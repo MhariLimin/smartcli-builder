@@ -5,27 +5,23 @@ interface Props {
   hasUnfilled: boolean;
   isFreeForm?: boolean;
   onSave: () => void;
+  onCopy: () => void | Promise<void>;
 }
 
-export function CommandPreview({ command, hasUnfilled, isFreeForm = false, onSave }: Props) {
+export function CommandPreview({
+  command,
+  hasUnfilled,
+  isFreeForm = false,
+  onSave,
+  onCopy
+}: Props) {
   const [copied, setCopied] = useState(false);
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(command);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // Clipboard API may be blocked — fall back to a temp textarea.
-      const ta = document.createElement('textarea');
-      ta.value = command;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }
+  const handleCopy = async () => {
+    if (!command) return;
+    await onCopy();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   return (
@@ -49,7 +45,7 @@ export function CommandPreview({ command, hasUnfilled, isFreeForm = false, onSav
       </pre>
       <div className="flex gap-2">
         <button
-          onClick={copy}
+          onClick={handleCopy}
           disabled={!command}
           className="px-4 py-2 rounded text-sm font-medium
                      bg-sky-600 hover:bg-sky-500 disabled:bg-slate-700 disabled:text-slate-500
