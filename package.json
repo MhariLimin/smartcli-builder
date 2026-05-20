@@ -4,12 +4,12 @@
   "version": "0.1.0",
   "description": "Root tooling for smartcli-web: one-command dev runner for backend + frontend.",
   "scripts": {
-    "postinstall": "npm --prefix smartcli-web-frontend install",
-    "dev:backend": "mvn -f smartcli-web-backend/pom.xml spring-boot:run",
-    "dev:frontend": "npm --prefix smartcli-web-frontend run dev",
+    "postinstall": "cd smartcli-web-frontend && npm install",
+    "dev:backend": "cd smartcli-web-backend && mvn spring-boot:run",
+    "dev:frontend": "cd smartcli-web-frontend && npm run dev",
     "dev": "concurrently --kill-others-on-fail --names backend,frontend --prefix-colors cyan.bold,green.bold \"npm:dev:backend\" \"npm:dev:frontend\"",
-    "build:frontend": "npm --prefix smartcli-web-frontend run build",
-    "build:backend": "mvn -f smartcli-web-backend/pom.xml -DskipTests package"
+    "build:frontend": "cd smartcli-web-frontend && npm run build",
+    "build:backend": "cd smartcli-web-backend && mvn -DskipTests package"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
