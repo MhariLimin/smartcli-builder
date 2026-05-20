@@ -29,52 +29,60 @@ function highlightTemplate(template: string): JSX.Element[] {
   return parts;
 }
 
-export function CatalogView({ onUseTemplate }: Props) {
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  const [loadingCounts, setLoadingCounts] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function readSearchParam(name: string): string {
+  if (typeof window === 'undefined') return '';
+  return new URLSearchParams(window.location.search).get(name) ?? '';
+}
 
+export function CatalogView({ onUseTemplate }: Props) {
+  const [allTemplates, setAllTemplates] = useState<CommandTemplate[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [selectedTemplates, setSelectedTemplates] = useState<CommandTemplate[]>([]);
-  const [loadingSelected, setLoadingSelected] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // One lightweight fetch on mount just to get categories + counts for the cards.
+  // Search state — initialized from `?q=` / `?cat=` on first mount so deep
+  // links restore the same view.
+  const [query, setQuery] = useState(() => readSearchParam('q'));
+  const [chipCategories, setChipCategories] = useState<string[]>(() => {
+    const raw = readSearchParam('cat');
+    return raw ? raw.split(',').filter(Boolean) : [];
+  });
+
+  // Single fetch on mount loads every template (~1718 rows, ~140KB). Kept in
+  // memory so search + detail-page filtering are both client-side.
   useEffect(() => {
-    setLoadingCounts(true);
+    setLoading(true);
     fetch('/api/templates')
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<CommandTemplate[]>;
       })
       .then((list) => {
+        setAllTemplates(list);
         const tally: Record<string, number> = {};
         for (const t of list) tally[t.category] = (tally[t.category] ?? 0) + 1;
         setCounts(tally);
         setError(null);
       })
       .catch((e) => setError(String(e)))
-      .finally(() => setLoadingCounts(false));
+      .finally(() => setLoading(false));
   }, []);
 
-  // Fetch a category's templates only when the user picks it.
+  // Mirror search state to the URL (replaceState so we don't bloat history).
   useEffect(() => {
-    if (!selected) {
-      setSelectedTemplates([]);
-      return;
-    }
-    setLoadingSelected(true);
-    fetch(`/api/templates?category=${encodeURIComponent(selected)}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<CommandTemplate[]>;
-      })
-      .then(setSelectedTemplates)
-      .catch(() => setSelectedTemplates([]))
-      .finally(() => setLoadingSelected(false));
-  }, [selected]);
+    const params = new URLSearchParams(window.location.search);
+    const q = query.trim();
+    if (q) params.set('q', q);
+    else params.delete('q');
+    if (chipCategories.length > 0) params.set('cat', chipCategories.join(','));
+    else params.delete('cat');
+    const search = params.toString();
+    const url = window.location.pathname + (search ? '?' + search : '');
+    window.history.replaceState({}, '', url);
+  }, [query, chipCategories]);
 
-  // Scroll to top on page transitions so it feels like navigating to a new page.
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [selected]);
@@ -83,6 +91,27 @@ export function CatalogView({ onUseTemplate }: Props) {
     () => Object.keys(counts).sort((a, b) => a.localeCompare(b)),
     [counts]
   );
+
+  const trimmedQuery = query.trim();
+  const isSearching = trimmedQuery.length > 0 || chipCategories.length > 0;
+
+  const filteredResults = useMemo(() => {
+    if (!isSearching) return [];
+    const q = trimmedQuery.toLowerCase();
+    return allTemplates.filter((t) => {
+      if (chipCategories.length > 0 && !chipCategories.includes(t.category)) return false;
+      if (!q) return true;
+      return (
+        t.template.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q)
+      );
+    });
+  }, [allTemplates, trimmedQuery, chipCategories, isSearching]);
+
+  const selectedTemplates = useMemo(() => {
+    if (!selected) return [];
+    return allTemplates.filter((t) => t.category === selected);
+  }, [allTemplates, selected]);
 
   const onCopy = async (template: string) => {
     try {
@@ -99,9 +128,163 @@ export function CatalogView({ onUseTemplate }: Props) {
     window.setTimeout(() => setCopied((c) => (c === template ? null : c)), 1200);
   };
 
+  const toggleChip = (cat: string) => {
+    setChipCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  };
+
+  const clearSearch = () => {
+    setQuery('');
+    setChipCategories([]);
+  };
+
   const selectedMeta = selected ? CATEGORY_DOCS[selected] : null;
 
-  // Detail page — shown when a category is selected.
+  const searchBar = (
+    <div className="space-y-3">
+      <div className="relative">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search across all templates… e.g. 'kubectl exec', 'tar gz', 'jwt'"
+          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5
+                     font-mono text-sm text-slate-100 placeholder-slate-600
+                     focus:outline-none focus:border-sky-600"
+          spellCheck={false}
+          autoComplete="off"
+          aria-label="Search catalog"
+        />
+        {(trimmedQuery || chipCategories.length > 0) && (
+          <button
+            onClick={clearSearch}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400
+                       hover:text-slate-200 px-2 py-1 rounded"
+            aria-label="Clear search"
+          >
+            clear ✕
+          </button>
+        )}
+      </div>
+      {isSearching && categories.length > 0 && (
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by category">
+          {categories.map((cat) => {
+            const active = chipCategories.includes(cat);
+            return (
+              <button
+                key={cat}
+                onClick={() => toggleChip(cat)}
+                aria-pressed={active}
+                className={
+                  'text-[11px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded border transition ' +
+                  (active
+                    ? 'bg-sky-900 text-sky-100 border-sky-700'
+                    : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-slate-200')
+                }
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  // Search-results view — takes precedence over detail / index when active.
+  if (isSearching) {
+    const count = filteredResults.length;
+    const queryLabel = trimmedQuery ? <code className="text-slate-300">{trimmedQuery}</code> : null;
+    const chipLabel =
+      chipCategories.length > 0 ? (
+        <span className="text-slate-400">
+          in {chipCategories.join(', ')}
+        </span>
+      ) : null;
+    return (
+      <div className="space-y-4">
+        <header className="space-y-1">
+          <h2 className="text-lg font-semibold text-slate-100">Catalog · search</h2>
+          <p className="text-sm text-slate-400">
+            Free-text match across template text and description, narrow with category chips.
+          </p>
+        </header>
+        {searchBar}
+        <div className="text-xs text-slate-400">
+          {loading ? (
+            'Loading catalog…'
+          ) : (
+            <>
+              {count} template{count === 1 ? '' : 's'}
+              {queryLabel && <> matching {queryLabel}</>}
+              {queryLabel && chipLabel && ' '}
+              {chipLabel}
+            </>
+          )}
+        </div>
+        {!loading && count === 0 && (
+          <div className="text-sm text-slate-500 italic bg-slate-900 border border-slate-800 rounded p-4">
+            No templates match. Try fewer words, check spelling, or clear category chips.
+          </div>
+        )}
+        {!loading && count > 0 && (
+          <ul className="space-y-2">
+            {filteredResults.map((t, idx) => (
+              <li
+                key={`${t.category}-${idx}`}
+                className="bg-slate-900 border border-slate-800 rounded p-3
+                           hover:border-slate-700 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          clearSearch();
+                          setSelected(t.category);
+                        }}
+                        className="text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5
+                                   rounded border bg-slate-800 text-slate-200 border-slate-700
+                                   hover:bg-slate-700"
+                        title={`Browse all ${t.category} templates`}
+                      >
+                        {t.category}
+                      </button>
+                    </div>
+                    <code className="block font-mono text-sm text-slate-100 break-all mt-1">
+                      {highlightTemplate(t.template)}
+                    </code>
+                    <div className="mt-1 text-xs text-slate-400">{t.description}</div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => onCopy(t.template)}
+                      className="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700
+                                 text-slate-200 border border-slate-700"
+                      title="Copy template to clipboard"
+                    >
+                      {copied === t.template ? 'Copied' : 'Copy'}
+                    </button>
+                    <button
+                      onClick={() => onUseTemplate(t.template, t.category)}
+                      className="text-xs px-2 py-1 rounded bg-sky-900 hover:bg-sky-800
+                                 text-sky-100 border border-sky-700"
+                      title="Open this in the builder"
+                    >
+                      Use
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
+
+  // Detail page — single category browse.
   if (selected) {
     return (
       <div className="space-y-4">
@@ -111,6 +294,8 @@ export function CatalogView({ onUseTemplate }: Props) {
         >
           ← Back to categories
         </button>
+
+        {searchBar}
 
         <div className="flex items-baseline justify-between gap-3 border-b border-slate-800 pb-2">
           <div>
@@ -137,11 +322,9 @@ export function CatalogView({ onUseTemplate }: Props) {
           )}
         </div>
 
-        {loadingSelected && (
-          <div className="text-sm text-slate-500">Loading commands…</div>
-        )}
+        {loading && <div className="text-sm text-slate-500">Loading commands…</div>}
 
-        {!loadingSelected && (
+        {!loading && (
           <ul className="space-y-2">
             {selectedTemplates.map((t, idx) => (
               <li
@@ -181,16 +364,19 @@ export function CatalogView({ onUseTemplate }: Props) {
     );
   }
 
-  // Index page — grid of category cards.
+  // Index — category grid.
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h2 className="text-lg font-semibold text-slate-100">Catalog</h2>
         <p className="text-sm text-slate-400">
           Pick a category to see every command and placeholder combination this app can generate
-          for it. Each card also links to the upstream documentation.
+          for it. Each card also links to the upstream documentation. Or search across all
+          categories at once.
         </p>
       </header>
+
+      {searchBar}
 
       {error && (
         <div className="text-sm text-rose-400 bg-rose-950/40 border border-rose-900 rounded p-3">
@@ -199,10 +385,10 @@ export function CatalogView({ onUseTemplate }: Props) {
       )}
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {loadingCounts && (
+        {loading && (
           <div className="text-sm text-slate-500 col-span-full">Loading categories…</div>
         )}
-        {!loadingCounts &&
+        {!loading &&
           categories.map((cat) => {
             const meta = CATEGORY_DOCS[cat];
             return (
