@@ -1800,6 +1800,11 @@
     { "category": "claude", "template": "claude doctor", "description": "Run Claude Code environment diagnostics" },
     { "category": "claude", "template": "claude update", "description": "Update Claude Code to the latest version" },
     { "category": "claude", "template": "source ~/.bashrc && claude", "description": "Reload bash config, then start Claude Code (useful after install/PATH changes)" },
-    { "category": "claude", "template": "source ~/.zshrc && claude", "description": "Reload zsh config, then start Claude Code (useful after install/PATH changes)" }
+    { "category": "claude", "template": "source ~/.zshrc && claude", "description": "Reload zsh config, then start Claude Code (useful after install/PATH changes)" },
+
+    { "category": "ssh", "template": "ssh -p <port:int=22> <user>@<host>", "description": "SSH to a host on a specific port (typed: int default 22)" },
+    { "category": "curl", "template": "curl -X <method|GET,POST,PUT,DELETE,PATCH=GET> <url>", "description": "Issue an HTTP request, method as enum with GET default" },
+    { "category": "kubectl", "template": "kubectl scale deployment <name> --replicas=<count:int=1> -n <env|prod,staging,dev=dev>", "description": "Scale a deployment; typed int replicas, enum environment" },
+    { "category": "docker", "template": "docker run --rm -it --pull=<always:bool=false> <image>", "description": "Run a container; bool flag for force-pull" }
   ]
 }

@@ -142,24 +142,100 @@ public class CommandCatalogService {
 
     /**
      * Extract placeholder names from a template, preserving order, removing duplicates.
+     * Names only (no type/enum/default) — see placeholderInfos() for the full parse.
      */
     public List<String> extractPlaceholders(String template) {
         if (template == null) return List.of();
         Matcher m = PLACEHOLDER_PATTERN.matcher(template);
         LinkedHashSet<String> names = new LinkedHashSet<>();
         while (m.find()) {
-            names.add(m.group(1));
+            names.add(parseSlot(m.group(1)).name);
         }
         return new ArrayList<>(names);
     }
 
     /**
-     * Build PlaceholderInfo entries with friendly labels and hints derived from the name.
+     * Build PlaceholderInfo entries with friendly labels, hints, and the parsed
+     * type / enum / default carried by the typed-placeholder grammar.
      */
     public List<PlaceholderInfo> placeholderInfos(String template) {
-        return extractPlaceholders(template).stream()
-                .map(name -> new PlaceholderInfo(name, humanizeLabel(name), hintFor(name)))
-                .collect(Collectors.toList());
+        if (template == null) return List.of();
+        Matcher m = PLACEHOLDER_PATTERN.matcher(template);
+        Map<String, PlaceholderInfo> byName = new LinkedHashMap<>();
+        while (m.find()) {
+            String fullSlot = m.group(0);
+            ParsedSlot p = parseSlot(m.group(1));
+            // Dedupe by name; the first occurrence wins for type/enum/default.
+            byName.computeIfAbsent(p.name, n -> new PlaceholderInfo(
+                    n,
+                    humanizeLabel(n),
+                    hintFor(n),
+                    p.type,
+                    p.enumOptions,
+                    p.defaultValue,
+                    fullSlot
+            ));
+        }
+        return new ArrayList<>(byName.values());
+    }
+
+    // ---- Typed-placeholder grammar --------------------------------------------------
+    //
+    // Slot grammar (inside the angle brackets):
+    //   name
+    //   name : type
+    //   name : type = default
+    //   name | opt1, opt2, opt3
+    //   name | opt1, opt2, opt3 = optN
+    // Whitespace around `:` `|` `=` `,` is permitted for catalog readability
+    // and stripped during parse.
+
+    private static final class ParsedSlot {
+        final String name;
+        final String type;             // null, "int", "float", "string", "bool", "path", "url", "enum"
+        final List<String> enumOptions;
+        final String defaultValue;
+        ParsedSlot(String name, String type, List<String> enumOptions, String defaultValue) {
+            this.name = name;
+            this.type = type;
+            this.enumOptions = enumOptions;
+            this.defaultValue = defaultValue;
+        }
+    }
+
+    private ParsedSlot parseSlot(String inner) {
+        String s = inner == null ? "" : inner.trim();
+        int pipe = s.indexOf('|');
+        int colon = s.indexOf(':');
+
+        // The grammar only allows `=default` AFTER `:type` or `|enum`. Legacy
+        // slots like `<key=value>` carry the `=` in the name itself and must
+        // stay verbatim — otherwise they'd reinterpret as `{name:"key",
+        // default:"value"}` and break existing catalog entries.
+        if (pipe < 0 && colon < 0) {
+            return new ParsedSlot(s, null, null, null);
+        }
+
+        String defaultValue = null;
+        int sep = (pipe >= 0) ? pipe : colon;
+        int eq = s.indexOf('=', sep + 1);
+        if (eq >= 0) {
+            defaultValue = s.substring(eq + 1).trim();
+            s = s.substring(0, eq).trim();
+        }
+
+        if (pipe >= 0) {
+            String name = s.substring(0, pipe).trim();
+            List<String> opts = Arrays.stream(s.substring(pipe + 1).split(","))
+                    .map(String::trim)
+                    .filter(x -> !x.isEmpty())
+                    .collect(Collectors.toList());
+            return new ParsedSlot(name, "enum", opts, defaultValue);
+        }
+        // colon >= 0
+        String name = s.substring(0, colon).trim();
+        String type = s.substring(colon + 1).trim().toLowerCase();
+        return new ParsedSlot(name, type, null, defaultValue);
     }
 
     private String humanizeLabel(String name) {
