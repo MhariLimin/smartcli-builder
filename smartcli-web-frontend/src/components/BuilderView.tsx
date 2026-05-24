@@ -7,8 +7,6 @@ import { ShortcutHelpModal } from './ShortcutHelpModal';
 import { SuggestionList } from './SuggestionList';
 import type { HistoryEntry, PlaceholderInfo, Suggestion } from '../types';
 
-const PLACEHOLDER_RE = /<([^>]+)>/g;
-
 const SUGGESTION_LISTBOX_ID = 'builder-suggestions';
 const SUGGESTION_OPTION_PREFIX = 'builder-suggestion';
 
@@ -76,10 +74,6 @@ function templateMatcher(template: string): RegExp {
     .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     .replace(/<[^>]+>/g, '.+');
   return new RegExp('^' + pattern + '$');
-}
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -176,13 +170,13 @@ export function BuilderView({
   }, [activeTemplate]);
 
   // Only show form rows for placeholder slots still literally present in the
-  // command. As the user fills a slot, its `<name>` is replaced and the row
-  // disappears on its own.
-  const remainingPlaceholders = useMemo(() => {
-    const present = new Set<string>();
-    for (const m of command.matchAll(PLACEHOLDER_RE)) present.add(m[1]);
-    return placeholders.filter((p) => present.has(p.name));
-  }, [placeholders, command]);
+  // command. Slot match is by the full literal text (`<port:int=22>`, not
+  // just `<port>`) so the typed grammar substitutes correctly. As the user
+  // fills a slot, its slot text is replaced and the row disappears on its own.
+  const remainingPlaceholders = useMemo(
+    () => placeholders.filter((p) => command.includes(p.slot)),
+    [placeholders, command]
+  );
 
   const trimmedCommand = command.trim();
   const hasUnfilled = remainingPlaceholders.length > 0;
@@ -205,8 +199,11 @@ export function BuilderView({
     setActiveIndex(-1);
   }, []);
 
-  const onFillPlaceholder = useCallback((name: string, value: string) => {
-    setCommand((prev) => prev.replace(new RegExp('<' + escapeRegex(name) + '>', 'g'), value));
+  // Substitute by full slot text (e.g. "<port:int=22>" → "8080"), not by name,
+  // so typed slots collapse correctly. split().join() replaces all occurrences
+  // without regex escaping concerns.
+  const onFillPlaceholder = useCallback((slot: string, value: string) => {
+    setCommand((prev) => prev.split(slot).join(value));
   }, []);
 
   // Copy → on success, also persist to history (Tier 2 #7). HistoryService
