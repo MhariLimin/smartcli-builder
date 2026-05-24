@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { api } from '../api/client';
-import { CommandPreview } from './CommandPreview';
 import { HistoryPanel } from './HistoryPanel';
 import { PlaceholderForm } from './PlaceholderForm';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
@@ -68,32 +67,38 @@ const STARTER_SUGGESTIONS: Suggestion[] = [
   }
 ];
 
-function extractPlaceholderNames(template: string): string[] {
-  const names: string[] = [];
-  for (const m of template.matchAll(PLACEHOLDER_RE)) {
-    if (!names.includes(m[1])) names.push(m[1]);
-  }
-  return names;
+// Build a regex from a template by escaping all regex metachars then turning
+// every <slot> into `.+`. Used to keep the template lock alive after the user
+// substitutes a placeholder (the literal text no longer matches `===`, but
+// the structural shape still does).
+function templateMatcher(template: string): RegExp {
+  const pattern = template
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/<[^>]+>/g, '.+');
+  return new RegExp('^' + pattern + '$');
 }
 
-function applyValues(template: string, values: Record<string, string>): string {
-  return template.replace(PLACEHOLDER_RE, (full, name) => {
-    const v = values[name];
-    return v && v.trim() ? v : full;
-  });
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-async function copyToClipboard(text: string): Promise<void> {
-  if (!text) return;
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (!text) return false;
   try {
     await navigator.clipboard.writeText(text);
+    return true;
   } catch {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
   }
 }
 
@@ -103,27 +108,37 @@ interface Props {
   resetSignal?: number;
 }
 
-export function BuilderView({ initialTemplate = '', initialCategory = '', resetSignal = 0 }: Props) {
-  const [query, setQuery] = useState(initialTemplate);
+export function BuilderView({
+  initialTemplate = '',
+  initialCategory = '',
+  resetSignal = 0
+}: Props) {
+  // Single canonical state: the field IS the command. Copy / Save / preview
+  // all act on this string. Eliminates the query vs effectiveCommand dual
+  // state that previously needed reconciling.
+  const [command, setCommand] = useState(initialTemplate);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
+  // activeTemplate tracks "what template was picked" purely to preserve the
+  // category and the known placeholder list across substitution. The lock
+  // drops as soon as the typed text can no longer match the template shape.
   const [activeTemplate, setActiveTemplate] = useState<string>(initialTemplate);
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
   const [placeholders, setPlaceholders] = useState<PlaceholderInfo[]>([]);
-  const [values, setValues] = useState<Record<string, string>>({});
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [copiedFlash, setCopiedFlash] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
 
   const debounceRef = useRef<number | null>(null);
 
   // When the parent triggers a reset (e.g. user picked a template from the catalog), reseed state.
   useEffect(() => {
-    setQuery(initialTemplate);
+    setCommand(initialTemplate);
     setActiveTemplate(initialTemplate);
     setActiveCategory(initialCategory);
-    setValues({});
     setShowSuggestions(true);
     setActiveIndex(-1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,7 +154,7 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
     debounceRef.current = window.setTimeout(async () => {
       setLoading(true);
       try {
-        const list = await api.suggestions(query, 30);
+        const list = await api.suggestions(command, 30);
         setSuggestions(list);
       } catch {
         setSuggestions([]);
@@ -150,38 +165,31 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
-  }, [query]);
+  }, [command]);
 
   useEffect(() => {
     if (!activeTemplate) {
       setPlaceholders([]);
       return;
     }
-    api.placeholders(activeTemplate).then((list) => {
-      setPlaceholders(list);
-      setValues((prev) => {
-        const next: Record<string, string> = {};
-        for (const p of list) next[p.name] = prev[p.name] ?? '';
-        return next;
-      });
-    });
+    api.placeholders(activeTemplate).then(setPlaceholders);
   }, [activeTemplate]);
 
-  const generated = useMemo(() => applyValues(activeTemplate, values), [activeTemplate, values]);
-  const hasUnfilled = useMemo(() => {
-    if (!activeTemplate) return false;
-    const names = extractPlaceholderNames(activeTemplate);
-    return names.some((n) => !values[n] || !values[n].trim());
-  }, [activeTemplate, values]);
+  // Only show form rows for placeholder slots still literally present in the
+  // command. As the user fills a slot, its `<name>` is replaced and the row
+  // disappears on its own.
+  const remainingPlaceholders = useMemo(() => {
+    const present = new Set<string>();
+    for (const m of command.matchAll(PLACEHOLDER_RE)) present.add(m[1]);
+    return placeholders.filter((p) => present.has(p.name));
+  }, [placeholders, command]);
 
-  // Free-form fallback: when nothing in the catalog matches, treat the raw
-  // input as the command so Copy / Save still work (e.g. `source ~/.bashrc && claude`).
-  const trimmedQuery = query.trim();
-  const isFreeForm = !activeTemplate && trimmedQuery.length > 0;
-  const effectiveCommand = activeTemplate ? generated : trimmedQuery;
+  const trimmedCommand = command.trim();
+  const hasUnfilled = remainingPlaceholders.length > 0;
+  const isFreeForm = !activeTemplate && trimmedCommand.length > 0;
 
   // Real backend suggestions take priority; starters fill the empty-query case.
-  const startersActive = !trimmedQuery && suggestions.length === 0 && !loading;
+  const startersActive = !trimmedCommand && suggestions.length === 0 && !loading;
   const displayedSuggestions = startersActive ? STARTER_SUGGESTIONS : suggestions;
   const headerLabel = startersActive ? 'Try one of these to get started' : undefined;
 
@@ -189,34 +197,40 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
     setActiveTemplate(s.text);
     setActiveCategory(s.category);
     if (s.kind === 'EXTENSION') {
-      setQuery(s.text + ' ');
+      setCommand(s.text + ' ');
     } else {
-      setQuery(s.text);
+      setCommand(s.text);
       setShowSuggestions(false);
     }
     setActiveIndex(-1);
   }, []);
 
-  const onCopy = useCallback(async () => {
-    if (!effectiveCommand) return;
-    await copyToClipboard(effectiveCommand);
-  }, [effectiveCommand]);
+  const onFillPlaceholder = useCallback((name: string, value: string) => {
+    setCommand((prev) => prev.replace(new RegExp('<' + escapeRegex(name) + '>', 'g'), value));
+  }, []);
 
-  const onSaveHistory = useCallback(async () => {
-    if (!effectiveCommand) return;
+  // Copy → on success, also persist to history (Tier 2 #7). HistoryService
+  // dedupes by command text, so a double-click still produces one row.
+  const onCopy = useCallback(async () => {
+    if (!trimmedCommand) return;
+    const ok = await copyToClipboard(command);
+    if (!ok) return;
+    setCopiedFlash(true);
+    setTimeout(() => setCopiedFlash(false), 1500);
     try {
-      const entry = await api.history.add(effectiveCommand, activeCategory || 'misc');
+      const entry = await api.history.add(command, activeCategory || 'misc');
       setHistory((prev) => [entry, ...prev.filter((p) => p.command !== entry.command)]);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 2000);
     } catch {
-      // ignore
+      // Save is best-effort; clipboard already succeeded.
     }
-  }, [effectiveCommand, activeCategory]);
+  }, [trimmedCommand, command, activeCategory]);
 
   const onReuse = useCallback((entry: HistoryEntry) => {
     setActiveTemplate(entry.command);
     setActiveCategory(entry.category);
-    setValues({});
-    setQuery(entry.command);
+    setCommand(entry.command);
     setShowSuggestions(false);
     setActiveIndex(-1);
   }, []);
@@ -231,26 +245,25 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
     setHistory([]);
   }, []);
 
-  const onValueChange = useCallback((name: string, value: string) => {
-    setValues((prev) => ({ ...prev, [name]: value }));
-  }, []);
-
-  const onQueryChange = (v: string) => {
-    setQuery(v);
+  // Drop the template lock when the typed text can no longer match the
+  // template's shape (modulo placeholder substitution). Substituting `<host>`
+  // → `db.local` should NOT drop the lock; rewriting `get` → `describe` should.
+  const onCommandChange = (v: string) => {
+    setCommand(v);
     setShowSuggestions(true);
     if (!v.trim()) {
       setActiveTemplate('');
       setActiveCategory('');
       return;
     }
-    // If the user edits the input away from the picked template, drop the
-    // template lock so the preview reflects the edit (otherwise `generated`
-    // stays pinned to the originally chosen template). EXTENSION picks set
-    // the query to `<text> ` with a trailing space; treat that as "still on
-    // the picked template" so the suggestion flow keeps working.
-    if (activeTemplate && v !== activeTemplate && v !== activeTemplate + ' ') {
-      setActiveTemplate('');
-      setActiveCategory('');
+    if (activeTemplate) {
+      // Suggestion EXTENSION picks set the field to "<text> " with a trailing
+      // space; treat that as still on the picked template.
+      const candidate = v.endsWith(' ') ? v.slice(0, -1) : v;
+      if (candidate !== activeTemplate && !templateMatcher(activeTemplate).test(candidate)) {
+        setActiveTemplate('');
+        setActiveCategory('');
+      }
     }
   };
 
@@ -323,9 +336,9 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
         <header className="space-y-1">
           <h2 className="text-lg font-semibold text-slate-100">Build a command</h2>
           <p className="text-sm text-slate-400">
-            Type a command and pick suggestions to build it. Placeholders become input boxes
-            you can fill in. Hit <span className="text-slate-200">Copy command</span> when you're done.
-            {' '}Press{' '}
+            Type the command directly or pick from suggestions; placeholder slots
+            become inputs that substitute in place. <span className="text-slate-200">Copy</span>{' '}
+            also saves to history. Press{' '}
             <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-xs font-mono text-slate-200">
               Shift
             </kbd>
@@ -340,8 +353,8 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
         <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
           <input
             type="text"
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
+            value={command}
+            onChange={(e) => onCommandChange(e.target.value)}
             onKeyDown={onInputKeyDown}
             placeholder="Start typing… e.g. 'kubectl get'"
             className="w-full bg-slate-950 px-4 py-3 font-mono text-base text-slate-100
@@ -378,21 +391,41 @@ export function BuilderView({ initialTemplate = '', initialCategory = '', resetS
               </button>
             </div>
           )}
+
+          {remainingPlaceholders.length > 0 && (
+            <div className="border-t border-slate-800">
+              <PlaceholderForm
+                placeholders={remainingPlaceholders}
+                onFill={onFillPlaceholder}
+              />
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-800 bg-slate-950/40">
+            <button
+              onClick={onCopy}
+              disabled={!trimmedCommand}
+              className="px-4 py-2 rounded text-sm font-medium
+                         bg-sky-600 hover:bg-sky-500 disabled:bg-slate-700 disabled:text-slate-500
+                         transition"
+            >
+              {copiedFlash ? 'Copied!' : 'Copy command'}
+            </button>
+            {savedFlash && (
+              <span className="text-xs text-emerald-300">✓ saved to history</span>
+            )}
+            <div className="ml-auto text-xs">
+              {hasUnfilled && (
+                <span className="text-amber-300">
+                  placeholders still empty — fill above or edit the line directly
+                </span>
+              )}
+              {!hasUnfilled && isFreeForm && (
+                <span className="text-sky-300">free-form — saved as typed</span>
+              )}
+            </div>
+          </div>
         </div>
-
-        <PlaceholderForm
-          placeholders={placeholders}
-          values={values}
-          onChange={onValueChange}
-        />
-
-        <CommandPreview
-          command={effectiveCommand}
-          hasUnfilled={hasUnfilled}
-          isFreeForm={isFreeForm}
-          onSave={onSaveHistory}
-          onCopy={onCopy}
-        />
       </main>
 
       <aside className="lg:sticky lg:top-6 h-[calc(100vh-3rem)]">
