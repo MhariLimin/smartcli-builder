@@ -9,3 +9,14 @@ smartcli-web:
 spring:
   application:
     name: smartcli-web-backend
+
+# OpenAPI / Swagger UI gating. Spec at /v3/api-docs stays on so the frontend
+# `npm run gen:api` script can fetch the contract; the browsable UI at
+# /swagger-ui.html flips to false in production to avoid info-disclosure
+# (set SMARTCLI_WEB_SWAGGER_UI=false in the Render env).
+springdoc:
+  api-docs:
+    enabled: ${SMARTCLI_WEB_OPENAPI_ENABLED:true}
+  swagger-ui:
+    enabled: ${SMARTCLI_WEB_SWAGGER_UI:true}
+    path: /swagger-ui.html
