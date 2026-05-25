@@ -44,15 +44,6 @@ export default function App() {
     <div className="min-h-full">
       <Header view={view} onChangeView={setView} waking={waking} />
       <div className="max-w-[1400px] mx-auto p-6 space-y-6">
-        <section className="space-y-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-            smartcli-web
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Compose CLI commands across kubectl, docker, git, ssh, and more.
-          </p>
-        </section>
-
         {view === 'builder' && (
           <BuilderView
             initialTemplate={seed.template}
