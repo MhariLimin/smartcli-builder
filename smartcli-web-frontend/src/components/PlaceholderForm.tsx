@@ -60,8 +60,8 @@ export function PlaceholderForm({ placeholders, onFill }: Props) {
   };
 
   return (
-    <div className="px-4 py-3 space-y-3 bg-slate-900">
-      <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">
+    <div className="px-4 py-3 space-y-3 bg-slate-50 dark:bg-slate-900">
+      <div className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 font-semibold">
         Fill placeholders{' '}
         <span className="font-normal normal-case text-slate-500">
           — Enter or Tab substitutes into the command above
@@ -139,19 +139,19 @@ function PlaceholderField({
   onCommitValue
 }: FieldProps) {
   const labelRow = (
-    <div className="text-sm text-slate-200 font-medium">
-      <span className="text-amber-300 font-mono">&lt;{p.name}&gt;</span>
+    <div className="text-sm text-slate-800 dark:text-slate-200 font-medium">
+      <span className="text-amber-700 dark:text-amber-300 font-mono">&lt;{p.name}&gt;</span>
       {p.type && (
         <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-500">
           {p.type === 'enum' ? 'select' : p.type}
         </span>
       )}
-      <span className="ml-2 text-slate-400 text-xs">{p.label}</span>
+      <span className="ml-2 text-slate-600 dark:text-slate-400 text-xs">{p.label}</span>
     </div>
   );
 
   const errorEl = error ? (
-    <div className="mt-1 text-xs text-rose-300">{error}</div>
+    <div className="mt-1 text-xs text-rose-700 dark:text-rose-300">{error}</div>
   ) : null;
 
   if (p.type === 'enum' && p.enumOptions && p.enumOptions.length > 0) {
@@ -161,8 +161,8 @@ function PlaceholderField({
         <select
           value={draft}
           onChange={(e) => onCommitValue(e.target.value)}
-          className="mt-1 w-full bg-slate-950 border border-slate-700 rounded px-3 py-2
-                     text-sm font-mono text-slate-100
+          className="mt-1 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2
+                     text-sm font-mono text-slate-900 dark:text-slate-100
                      focus:outline-none focus:border-sky-500"
         >
           <option value="" disabled>
@@ -189,10 +189,10 @@ function PlaceholderField({
           onChange={(e) => onCommitValue(e.target.checked ? 'true' : 'false')}
           className="h-4 w-4 accent-sky-500"
         />
-        <div className="text-sm text-slate-200 font-medium">
-          <span className="text-amber-300 font-mono">&lt;{p.name}&gt;</span>
+        <div className="text-sm text-slate-800 dark:text-slate-200 font-medium">
+          <span className="text-amber-700 dark:text-amber-300 font-mono">&lt;{p.name}&gt;</span>
           <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-500">bool</span>
-          <span className="ml-2 text-slate-400 text-xs">{p.label}</span>
+          <span className="ml-2 text-slate-600 dark:text-slate-400 text-xs">{p.label}</span>
         </div>
       </label>
     );
@@ -217,10 +217,10 @@ function PlaceholderField({
           }
         }}
         placeholder={p.hint}
-        className={`mt-1 w-full bg-slate-950 border rounded px-3 py-2
-                   text-sm font-mono text-slate-100 placeholder-slate-600
+        className={`mt-1 w-full bg-white dark:bg-slate-950 border rounded px-3 py-2
+                   text-sm font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600
                    focus:outline-none focus:border-sky-500
-                   ${error ? 'border-rose-600' : 'border-slate-700'}`}
+                   ${error ? 'border-rose-600' : 'border-slate-300 dark:border-slate-700'}`}
         spellCheck={false}
         autoComplete="off"
       />

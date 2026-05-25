@@ -24,20 +24,20 @@ export function ShortcutHelpModal({ isMac, onClose }: Props) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="shortcut-help-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-500/40 dark:bg-black/60"
       onClick={onClose}
     >
       <div
-        className="bg-slate-900 border border-slate-800 rounded-lg p-6 max-w-md w-full mx-4 space-y-4"
+        className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 max-w-md w-full mx-4 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-baseline justify-between">
-          <h2 id="shortcut-help-title" className="text-lg font-semibold text-slate-100">
+          <h2 id="shortcut-help-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Keyboard shortcuts
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 text-sm"
+            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 text-sm"
             aria-label="Close"
           >
             ✕
@@ -69,13 +69,13 @@ function Row({ keys, desc }: { keys: string[]; desc: string }) {
         {keys.map((k, i) => (
           <span key={i} className="flex items-center">
             {i > 0 && <span className="text-slate-500 mx-1">+</span>}
-            <kbd className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-xs font-mono text-slate-200">
+            <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200">
               {k}
             </kbd>
           </span>
         ))}
       </div>
-      <div className="text-slate-300 text-right">{desc}</div>
+      <div className="text-slate-700 dark:text-slate-300 text-right">{desc}</div>
     </div>
   );
 }

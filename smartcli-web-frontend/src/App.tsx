@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BuilderView } from './components/BuilderView';
 import { CatalogView } from './components/CatalogView';
+import { Header } from './components/Header';
 import { api } from './api/client';
 
 type View = 'builder' | 'catalog';
@@ -40,59 +41,27 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-full p-6 max-w-[1400px] mx-auto space-y-6">
-      <header className="flex items-end justify-between gap-4 flex-wrap">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-slate-100">smartcli-web</h1>
-          <p className="text-sm text-slate-400">
+    <div className="min-h-full">
+      <Header view={view} onChangeView={setView} waking={waking} />
+      <div className="max-w-[1400px] mx-auto p-6 space-y-6">
+        <section className="space-y-1">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            smartcli-web
+          </h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Compose CLI commands across kubectl, docker, git, ssh, and more.
           </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          {waking && (
-            <span
-              className="text-xs px-2 py-1 rounded border border-amber-700 bg-amber-900/40 text-amber-200 animate-pulse"
-              role="status"
-              aria-live="polite"
-            >
-              waking backend…
-            </span>
-          )}
-          <nav className="flex gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1">
-            <button
-              onClick={() => setView('builder')}
-              className={
-                'px-3 py-1.5 text-sm rounded ' +
-                (view === 'builder'
-                  ? 'bg-sky-900 text-sky-100'
-                  : 'text-slate-300 hover:bg-slate-800')
-              }
-            >
-              Builder
-            </button>
-            <button
-              onClick={() => setView('catalog')}
-              className={
-                'px-3 py-1.5 text-sm rounded ' +
-                (view === 'catalog'
-                  ? 'bg-sky-900 text-sky-100'
-                  : 'text-slate-300 hover:bg-slate-800')
-              }
-            >
-              Catalog
-            </button>
-          </nav>
-        </div>
-      </header>
+        </section>
 
-      {view === 'builder' && (
-        <BuilderView
-          initialTemplate={seed.template}
-          initialCategory={seed.category}
-          resetSignal={resetSignal}
-        />
-      )}
-      {view === 'catalog' && <CatalogView onUseTemplate={onUseTemplate} />}
+        {view === 'builder' && (
+          <BuilderView
+            initialTemplate={seed.template}
+            initialCategory={seed.category}
+            resetSignal={resetSignal}
+          />
+        )}
+        {view === 'catalog' && <CatalogView onUseTemplate={onUseTemplate} />}
+      </div>
     </div>
   );
 }

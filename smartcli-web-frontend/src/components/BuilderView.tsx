@@ -331,31 +331,31 @@ export function BuilderView({
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6">
       <main className="space-y-6 min-w-0">
         <header className="space-y-1">
-          <h2 className="text-lg font-semibold text-slate-100">Build a command</h2>
-          <p className="text-sm text-slate-400">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Build a command</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Type the command directly or pick from suggestions; placeholder slots
-            become inputs that substitute in place. <span className="text-slate-200">Copy</span>{' '}
+            become inputs that substitute in place. <span className="text-slate-800 dark:text-slate-200">Copy</span>{' '}
             also saves to history. Press{' '}
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-xs font-mono text-slate-200">
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200">
               Shift
             </kbd>
             <span className="text-slate-500"> + </span>
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-xs font-mono text-slate-200">
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200">
               ?
             </kbd>{' '}
             for keyboard shortcuts.
           </p>
         </header>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
           <input
             type="text"
             value={command}
             onChange={(e) => onCommandChange(e.target.value)}
             onKeyDown={onInputKeyDown}
             placeholder="Start typing… e.g. 'kubectl get'"
-            className="w-full bg-slate-950 px-4 py-3 font-mono text-base text-slate-100
-                       placeholder-slate-600 focus:outline-none border-b border-slate-800"
+            className="w-full bg-white dark:bg-slate-950 px-4 py-3 font-mono text-base text-slate-900 dark:text-slate-100
+                       placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none border-b border-slate-200 dark:border-slate-800"
             spellCheck={false}
             autoComplete="off"
             autoFocus
@@ -382,7 +382,7 @@ export function BuilderView({
               Suggestions hidden —{' '}
               <button
                 onClick={() => setShowSuggestions(true)}
-                className="underline hover:text-sky-300"
+                className="underline hover:text-sky-600 dark:hover:text-sky-300"
               >
                 show again
               </button>
@@ -390,7 +390,7 @@ export function BuilderView({
           )}
 
           {remainingPlaceholders.length > 0 && (
-            <div className="border-t border-slate-800">
+            <div className="border-t border-slate-200 dark:border-slate-800">
               <PlaceholderForm
                 placeholders={remainingPlaceholders}
                 onFill={onFillPlaceholder}
@@ -398,27 +398,27 @@ export function BuilderView({
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-800 bg-slate-950/40">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-950/40">
             <button
               onClick={onCopy}
               disabled={!trimmedCommand}
               className="px-4 py-2 rounded text-sm font-medium
-                         bg-sky-600 hover:bg-sky-500 disabled:bg-slate-700 disabled:text-slate-500
+                         bg-sky-600 hover:bg-sky-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 disabled:text-slate-500
                          transition"
             >
               {copiedFlash ? 'Copied!' : 'Copy command'}
             </button>
             {savedFlash && (
-              <span className="text-xs text-emerald-300">✓ saved to history</span>
+              <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ saved to history</span>
             )}
             <div className="ml-auto text-xs">
               {hasUnfilled && (
-                <span className="text-amber-300">
+                <span className="text-amber-700 dark:text-amber-300">
                   placeholders still empty — fill above or edit the line directly
                 </span>
               )}
               {!hasUnfilled && isFreeForm && (
-                <span className="text-sky-300">free-form — saved as typed</span>
+                <span className="text-sky-700 dark:text-sky-300">free-form — saved as typed</span>
               )}
             </div>
           </div>

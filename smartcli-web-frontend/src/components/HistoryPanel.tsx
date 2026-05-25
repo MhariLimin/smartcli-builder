@@ -15,15 +15,15 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear }: Props) {
   );
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-3 h-full flex flex-col">
+    <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3 h-full flex flex-col">
       <div className="flex items-center justify-between">
-        <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">
+        <div className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 font-semibold">
           History ({history.length})
         </div>
         {history.length > 0 && (
           <button
             onClick={onClear}
-            className="text-xs text-slate-400 hover:text-rose-400 transition"
+            className="text-xs text-slate-600 dark:text-slate-400 hover:text-rose-400 transition"
           >
             Clear all
           </button>
@@ -34,10 +34,10 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear }: Props) {
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         placeholder="Filter history…"
-        className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm
-                   text-slate-100 placeholder-slate-600 focus:outline-none focus:border-sky-500"
+        className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-sm
+                   text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
       />
-      <ul className="divide-y divide-slate-800 overflow-auto flex-1 -mx-1">
+      <ul className="divide-y divide-slate-200 dark:divide-slate-800 overflow-auto flex-1 -mx-1">
         {filtered.length === 0 && (
           <li className="text-slate-500 text-sm italic px-2 py-4">
             {history.length === 0 ? 'No saved commands yet.' : 'No matches.'}
@@ -52,7 +52,7 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear }: Props) {
               <div className="flex-1 min-w-0">
                 <button
                   onClick={() => onReuse(h)}
-                  className="text-left font-mono text-xs text-slate-200 hover:text-sky-300 break-all"
+                  className="text-left font-mono text-xs text-slate-800 dark:text-slate-200 hover:text-sky-600 dark:hover:text-sky-300 break-all"
                   title="Click to reuse"
                 >
                   {h.command}
