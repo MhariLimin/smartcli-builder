@@ -7,23 +7,26 @@
     <script>
       // Anti-flash: apply the persisted theme before React mounts so the
       // first paint is correct. Mirrors the resolution logic in ThemeContext;
-      // keep them in sync if either side changes.
+      // keep them in sync if either side changes. Two modes only — first-ever
+      // load seeds from the OS preference, after which the user's explicit
+      // choice persists in localStorage.
       (function () {
         try {
           var stored = localStorage.getItem('smartcli-web.theme');
-          var mode = stored === 'light' || stored === 'dark' ? stored : 'system';
-          var dark =
-            mode === 'dark' ||
-            (mode === 'system' &&
-              window.matchMedia('(prefers-color-scheme: dark)').matches);
-          document.documentElement.classList.toggle('dark', dark);
+          var mode =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+          document.documentElement.classList.toggle('dark', mode === 'dark');
         } catch (e) {
           document.documentElement.classList.add('dark');
         }
       })();
     </script>
   </head>
-  <body class="bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <body class="bg-white text-slate-900 dark:bg-black dark:text-slate-100">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

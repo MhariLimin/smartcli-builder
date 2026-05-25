@@ -8,49 +8,48 @@ import {
   type ReactNode
 } from 'react';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
-export type ResolvedTheme = 'light' | 'dark';
+// Two explicit modes only. The original ship included a third 'system' mode
+// but users couldn't visually distinguish it from 'dark' on a dark-preferring
+// OS (it correctly resolved to the same palette), so it was dropped. The OS
+// preference is still consulted once on first ever load to seed a sensible
+// default; after that the user's explicit choice persists.
+export type ThemeMode = 'light' | 'dark';
 
 const STORAGE_KEY = 'smartcli-web.theme';
 const DARK_MEDIA_QUERY = '(prefers-color-scheme: dark)';
 
 interface ThemeContextValue {
   mode: ThemeMode;
-  resolved: ResolvedTheme;
   setMode: (mode: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function readStoredMode(): ThemeMode {
+function readInitialMode(): ThemeMode {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === 'light' || raw === 'dark' || raw === 'system') return raw;
+    if (raw === 'light' || raw === 'dark') return raw;
   } catch {
     // localStorage may throw in private mode / when disabled.
   }
-  return 'system';
+  // First-ever load: seed from the OS preference so users with a dark OS
+  // don't get a flash of light, and vice versa.
+  if (typeof window !== 'undefined' && window.matchMedia(DARK_MEDIA_QUERY).matches) {
+    return 'dark';
+  }
+  return 'light';
 }
 
-function resolve(mode: ThemeMode): ResolvedTheme {
-  if (mode === 'light' || mode === 'dark') return mode;
-  if (typeof window === 'undefined') return 'dark';
-  return window.matchMedia(DARK_MEDIA_QUERY).matches ? 'dark' : 'light';
-}
-
-function applyToDocument(resolved: ResolvedTheme) {
+function applyToDocument(mode: ThemeMode) {
   if (typeof document === 'undefined') return;
-  document.documentElement.classList.toggle('dark', resolved === 'dark');
+  document.documentElement.classList.toggle('dark', mode === 'dark');
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>(() => readStoredMode());
-  const [resolved, setResolved] = useState<ResolvedTheme>(() => resolve(mode));
+  const [mode, setModeState] = useState<ThemeMode>(() => readInitialMode());
 
   useEffect(() => {
-    const next = resolve(mode);
-    setResolved(next);
-    applyToDocument(next);
+    applyToDocument(mode);
     try {
       localStorage.setItem(STORAGE_KEY, mode);
     } catch {
@@ -58,24 +57,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [mode]);
 
-  // Track OS-level changes only while the user has opted into 'system'.
-  useEffect(() => {
-    if (mode !== 'system' || typeof window === 'undefined') return;
-    const mql = window.matchMedia(DARK_MEDIA_QUERY);
-    const onChange = () => {
-      const next: ResolvedTheme = mql.matches ? 'dark' : 'light';
-      setResolved(next);
-      applyToDocument(next);
-    };
-    mql.addEventListener('change', onChange);
-    return () => mql.removeEventListener('change', onChange);
-  }, [mode]);
-
   const setMode = useCallback((next: ThemeMode) => setModeState(next), []);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ mode, resolved, setMode }),
-    [mode, resolved, setMode]
+    () => ({ mode, setMode }),
+    [mode, setMode]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
