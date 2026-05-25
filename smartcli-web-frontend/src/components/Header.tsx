@@ -12,8 +12,7 @@ interface Props {
 
 const THEME_OPTIONS: { mode: ThemeMode; label: string; hint: string }[] = [
   { mode: 'light', label: 'Light', hint: 'Bright UI' },
-  { mode: 'dark', label: 'Dark', hint: 'Default slate palette' },
-  { mode: 'system', label: 'System', hint: 'Follow OS preference' }
+  { mode: 'dark', label: 'Dark', hint: 'True-black surfaces' }
 ];
 
 export function Header({ view, onChangeView, waking }: Props) {
@@ -53,30 +52,33 @@ export function Header({ view, onChangeView, waking }: Props) {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800
-                 bg-white/90 dark:bg-slate-950/90 backdrop-blur"
+      className="sticky top-0 z-40 backdrop-blur
+                 bg-slate-100 dark:bg-slate-900
+                 border-b-2 border-sky-500/60
+                 shadow-md shadow-slate-300/40 dark:shadow-black/40"
     >
-      <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-4">
+      <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <img
             src="/Header_logo.png"
             alt="smartcli-web logo"
-            className="h-8 w-auto select-none"
+            className="h-20 w-auto select-none"
             draggable={false}
           />
           <div className="hidden sm:flex flex-col leading-tight min-w-0">
-            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+            <span className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
               smartcli-web
             </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-500 truncate">
+            <span className="text-xs text-slate-600 dark:text-slate-400 truncate">
               Compose CLI commands
             </span>
           </div>
         </div>
 
         <nav
-          className="ml-auto flex gap-1 bg-slate-100 dark:bg-slate-900
-                     border border-slate-200 dark:border-slate-800 rounded-lg p-1"
+          className="ml-auto flex gap-1 bg-white dark:bg-slate-800
+                     border border-slate-200 dark:border-slate-700 rounded-lg p-1
+                     shadow-sm"
           aria-label="Primary"
         >
           <NavButton active={view === 'builder'} onClick={() => onChangeView('builder')}>
@@ -108,8 +110,9 @@ export function Header({ view, onChangeView, waking }: Props) {
             aria-expanded={menuOpen}
             aria-label="Account menu"
             className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1
-                       border border-slate-200 dark:border-slate-800
-                       hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+                       bg-white dark:bg-slate-800
+                       border border-slate-200 dark:border-slate-700
+                       hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm"
           >
             <span
               className="inline-flex h-7 w-7 items-center justify-center rounded-full
@@ -199,7 +202,7 @@ function NavButton({
         'px-3 py-1.5 text-sm rounded transition ' +
         (active
           ? 'bg-sky-200 text-sky-900 dark:bg-sky-900 dark:text-sky-100'
-          : 'text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800')
+          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')
       }
     >
       {children}
