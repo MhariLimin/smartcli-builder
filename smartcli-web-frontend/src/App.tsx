@@ -1,18 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { BuilderView } from './components/BuilderView';
-import { CatalogView } from './components/CatalogView';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
+import { BuilderPage } from './pages/Builder';
+import { CatalogPage } from './pages/Catalog';
+import { HistoryPage } from './pages/History';
+import { SavedPage } from './pages/Saved';
 import { api } from './api/client';
 
-type View = 'builder' | 'catalog';
-
 export default function App() {
-  const [view, setView] = useState<View>('builder');
-  const [seed, setSeed] = useState<{ template: string; category: string }>({
-    template: '',
-    category: ''
-  });
-  const [resetSignal, setResetSignal] = useState(0);
   const [waking, setWaking] = useState(false);
   const warmWakeFired = useRef(false);
 
@@ -33,26 +29,22 @@ export default function App() {
       });
   }, []);
 
-  const onUseTemplate = (template: string, category: string) => {
-    setSeed({ template, category });
-    setResetSignal((n) => n + 1);
-    setView('builder');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
-    <div className="min-h-full">
-      <Header view={view} onChangeView={setView} waking={waking} />
-      <div className="max-w-[1400px] mx-auto p-6 space-y-6">
-        {view === 'builder' && (
-          <BuilderView
-            initialTemplate={seed.template}
-            initialCategory={seed.category}
-            resetSignal={resetSignal}
-          />
-        )}
-        {view === 'catalog' && <CatalogView onUseTemplate={onUseTemplate} />}
+    <BrowserRouter>
+      <div className="min-h-full">
+        <Header waking={waking} />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 min-w-0 p-6 space-y-6">
+            <Routes>
+              <Route path="/" element={<BuilderPage />} />
+              <Route path="/saved" element={<SavedPage />} />
+              <Route path="/history" element={<HistoryPage />} />
+              <Route path="/catalog" element={<CatalogPage />} />
+            </Routes>
+          </main>
+        </div>
       </div>
-    </div>
+    </BrowserRouter>
   );
 }

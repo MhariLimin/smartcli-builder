@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { api } from '../api/client';
-import { HistoryPanel } from './HistoryPanel';
 import { PlaceholderForm } from './PlaceholderForm';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
 import { SuggestionList } from './SuggestionList';
@@ -100,12 +99,17 @@ interface Props {
   initialTemplate?: string;
   initialCategory?: string;
   resetSignal?: number;
+  // Called on a successful Copy with the command text and category. Pages
+  // wire this to the shared history hook so the entry appears in the
+  // sidebar's History destination immediately.
+  addHistory?: (command: string, category: string) => Promise<HistoryEntry | null>;
 }
 
 export function BuilderView({
   initialTemplate = '',
   initialCategory = '',
-  resetSignal = 0
+  resetSignal = 0,
+  addHistory
 }: Props) {
   // Single canonical state: the field IS the command. Copy / Save / preview
   // all act on this string. Eliminates the query vs effectiveCommand dual
@@ -119,7 +123,6 @@ export function BuilderView({
   const [activeTemplate, setActiveTemplate] = useState<string>(initialTemplate);
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
   const [placeholders, setPlaceholders] = useState<PlaceholderInfo[]>([]);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -137,10 +140,6 @@ export function BuilderView({
     setActiveIndex(-1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetSignal]);
-
-  useEffect(() => {
-    api.history.list().then(setHistory).catch(() => setHistory([]));
-  }, []);
 
   useEffect(() => {
     setActiveIndex(-1);
@@ -206,41 +205,24 @@ export function BuilderView({
     setCommand((prev) => prev.split(slot).join(value));
   }, []);
 
-  // Copy → on success, also persist to history (Tier 2 #7). HistoryService
-  // dedupes by command text, so a double-click still produces one row.
+  // Copy → on success, also persist to history (Tier 2 #7). Persistence now
+  // routes through the shared useHistory() hook the parent page owns, so the
+  // sidebar's History destination updates in lockstep without re-fetching.
+  // HistoryService still dedupes by command text on the backend, so a
+  // double-click still produces one row.
   const onCopy = useCallback(async () => {
     if (!trimmedCommand) return;
     const ok = await copyToClipboard(command);
     if (!ok) return;
     setCopiedFlash(true);
     setTimeout(() => setCopiedFlash(false), 1500);
-    try {
-      const entry = await api.history.add(command, activeCategory || 'misc');
-      setHistory((prev) => [entry, ...prev.filter((p) => p.command !== entry.command)]);
+    if (!addHistory) return;
+    const entry = await addHistory(command, activeCategory || 'misc');
+    if (entry) {
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2000);
-    } catch {
-      // Save is best-effort; clipboard already succeeded.
     }
-  }, [trimmedCommand, command, activeCategory]);
-
-  const onReuse = useCallback((entry: HistoryEntry) => {
-    setActiveTemplate(entry.command);
-    setActiveCategory(entry.category);
-    setCommand(entry.command);
-    setShowSuggestions(false);
-    setActiveIndex(-1);
-  }, []);
-
-  const onDeleteHistory = useCallback(async (id: string) => {
-    await api.history.delete(id);
-    setHistory((prev) => prev.filter((h) => h.id !== id));
-  }, []);
-
-  const onClearHistory = useCallback(async () => {
-    await api.history.clear();
-    setHistory([]);
-  }, []);
+  }, [trimmedCommand, command, activeCategory, addHistory]);
 
   // Drop the template lock when the typed text can no longer match the
   // template's shape (modulo placeholder substitution). Substituting `<host>`
@@ -328,8 +310,7 @@ export function BuilderView({
     activeIndex >= 0 ? `${SUGGESTION_OPTION_PREFIX}-${activeIndex}` : undefined;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6">
-      <main className="space-y-6 min-w-0">
+    <div className="space-y-6 min-w-0">
         <header className="space-y-1">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Build a command</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -423,16 +404,6 @@ export function BuilderView({
             </div>
           </div>
         </div>
-      </main>
-
-      <aside className="lg:sticky lg:top-6 h-[calc(100vh-3rem)]">
-        <HistoryPanel
-          history={history}
-          onReuse={onReuse}
-          onDelete={onDeleteHistory}
-          onClear={onClearHistory}
-        />
-      </aside>
 
       {helpOpen && <ShortcutHelpModal isMac={isMac} onClose={() => setHelpOpen(false)} />}
     </div>

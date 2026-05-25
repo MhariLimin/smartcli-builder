@@ -2,11 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTheme, type ThemeMode } from '../theme/ThemeContext';
 
-type View = 'builder' | 'catalog';
-
 interface Props {
-  view: View;
-  onChangeView: (next: View) => void;
   waking: boolean;
 }
 
@@ -15,7 +11,7 @@ const THEME_OPTIONS: { mode: ThemeMode; label: string; hint: string }[] = [
   { mode: 'dark', label: 'Dark', hint: 'True-black surfaces' }
 ];
 
-export function Header({ view, onChangeView, waking }: Props) {
+export function Header({ waking }: Props) {
   const { mode, setMode } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -75,32 +71,22 @@ export function Header({ view, onChangeView, waking }: Props) {
           </div>
         </div>
 
-        <nav
-          className="ml-auto flex gap-1 bg-white dark:bg-slate-800
-                     border border-slate-200 dark:border-slate-700 rounded-lg p-1
-                     shadow-sm"
-          aria-label="Primary"
-        >
-          <NavButton active={view === 'builder'} onClick={() => onChangeView('builder')}>
-            Builder
-          </NavButton>
-          <NavButton active={view === 'catalog'} onClick={() => onChangeView('catalog')}>
-            Catalog
-          </NavButton>
-        </nav>
-
-        {waking && (
-          <span
-            className="text-xs px-2 py-1 rounded border
-                       border-amber-300 dark:border-amber-700
-                       bg-amber-100 dark:bg-amber-900/40
-                       text-amber-800 dark:text-amber-200 animate-pulse"
-            role="status"
-            aria-live="polite"
-          >
-            waking backend…
-          </span>
-        )}
+        {/* Primary navigation moved to the left Sidebar component as part of
+            Tier-3 #13. The header now only carries product chrome (logo,
+            warm-wake pill, account dropdown). */}
+        <div className="ml-auto flex items-center gap-3">
+          {waking && (
+            <span
+              className="text-xs px-2 py-1 rounded border
+                         border-amber-300 dark:border-amber-700
+                         bg-amber-100 dark:bg-amber-900/40
+                         text-amber-800 dark:text-amber-200 animate-pulse"
+              role="status"
+              aria-live="polite"
+            >
+              waking backend…
+            </span>
+          )}
 
         <div className="relative">
           <button
@@ -181,32 +167,9 @@ export function Header({ view, onChangeView, waking }: Props) {
             </div>
           )}
         </div>
+        </div>
       </div>
     </header>
-  );
-}
-
-function NavButton({
-  active,
-  onClick,
-  children
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={
-        'px-3 py-1.5 text-sm rounded transition ' +
-        (active
-          ? 'bg-sky-200 text-sky-900 dark:bg-sky-900 dark:text-sky-100'
-          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')
-      }
-    >
-      {children}
-    </button>
   );
 }
 
