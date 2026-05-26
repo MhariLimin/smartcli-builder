@@ -6,6 +6,7 @@ import { BuilderPage } from './pages/Builder';
 import { CatalogPage } from './pages/Catalog';
 import { HistoryPage } from './pages/History';
 import { SavedPage } from './pages/Saved';
+import { ShareRedirect } from './pages/ShareRedirect';
 import { api } from './api/client';
 
 export default function App() {
@@ -41,6 +42,8 @@ export default function App() {
               <Route path="/saved" element={<SavedPage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/catalog" element={<CatalogPage />} />
+              {/* /c/:payload decodes a share link and redirects to /. */}
+              <Route path="/c/:payload" element={<ShareRedirect />} />
             </Routes>
           </main>
         </div>
