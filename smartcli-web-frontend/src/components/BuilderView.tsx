@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { api } from '../api/client';
+import { describeRefusal, encode as encodeShare } from '../lib/shareLink';
 import { PlaceholderForm } from './PlaceholderForm';
 import { SaveToFolderModal } from './SaveToFolderModal';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
@@ -131,6 +132,8 @@ export function BuilderView({
   const [savedFlash, setSavedFlash] = useState(false);
   const [savedToFolderFlash, setSavedToFolderFlash] = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [shareFlash, setShareFlash] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   const debounceRef = useRef<number | null>(null);
 
@@ -207,6 +210,29 @@ export function BuilderView({
   const onFillPlaceholder = useCallback((slot: string, value: string) => {
     setCommand((prev) => prev.split(slot).join(value));
   }, []);
+
+  // Share-by-link: encode the *substituted* command (not the template) so the
+  // recipient lands on the same line the sharer was looking at. Refuses on
+  // secret-pattern matches and on URLs that exceed the in-memory ceiling.
+  const onShare = useCallback(async () => {
+    if (!trimmedCommand) return;
+    setShareError(null);
+    setShareFlash(null);
+    const result = encodeShare(command, activeCategory);
+    if (!result.ok) {
+      setShareError(describeRefusal(result.refusal));
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(result.url);
+      setShareFlash('link copied — anyone with it can read the command');
+      setTimeout(() => setShareFlash(null), 3000);
+    } catch {
+      // Clipboard refused (insecure context, permission denied) — show the
+      // URL so the user can copy it manually.
+      setShareError('Clipboard blocked. Link: ' + result.url);
+    }
+  }, [trimmedCommand, command, activeCategory]);
 
   // Copy → on success, also persist to history (Tier 2 #7). Persistence now
   // routes through the shared useHistory() hook the parent page owns, so the
@@ -405,11 +431,33 @@ export function BuilderView({
             >
               Save to folder…
             </button>
+            <button
+              onClick={onShare}
+              disabled={!trimmedCommand}
+              title="Copy a share link to the clipboard"
+              className="px-3 py-2 rounded text-sm font-medium border
+                         border-slate-300 dark:border-slate-700
+                         bg-white dark:bg-slate-800
+                         text-slate-800 dark:text-slate-200
+                         hover:bg-slate-100 dark:hover:bg-slate-700
+                         disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400
+                         transition"
+            >
+              Share link
+            </button>
             {savedFlash && (
               <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ saved to history</span>
             )}
             {savedToFolderFlash && (
               <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ saved to folder</span>
+            )}
+            {shareFlash && (
+              <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ {shareFlash}</span>
+            )}
+            {shareError && (
+              <span className="text-xs text-amber-700 dark:text-amber-300 max-w-[24rem] truncate" title={shareError}>
+                ⚠ {shareError}
+              </span>
             )}
             <div className="ml-auto text-xs">
               {hasUnfilled && (
