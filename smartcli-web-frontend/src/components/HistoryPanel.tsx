@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { shareCommandToClipboard } from '../lib/shareLink';
 import type { HistoryEntry } from '../types';
 
 interface Props {
@@ -10,9 +11,20 @@ interface Props {
 
 export function HistoryPanel({ history, onReuse, onDelete, onClear }: Props) {
   const [filter, setFilter] = useState('');
+  // Inline flash per row — id of the row that just emitted a message.
+  const [flash, setFlash] = useState<{ id: string; ok: boolean; message: string } | null>(null);
+
   const filtered = history.filter((h) =>
     h.command.toLowerCase().includes(filter.toLowerCase())
   );
+
+  const onShare = async (h: HistoryEntry) => {
+    const result = await shareCommandToClipboard(h.command, h.category);
+    setFlash({ id: h.id, ...result });
+    window.setTimeout(() => {
+      setFlash((cur) => (cur && cur.id === h.id ? null : cur));
+    }, 2500);
+  };
 
   return (
     <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3 h-full flex flex-col">
@@ -62,6 +74,13 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear }: Props) {
                 </div>
               </div>
               <button
+                onClick={() => onShare(h)}
+                className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-sky-500 text-xs transition"
+                title="Copy share link"
+              >
+                ↗
+              </button>
+              <button
                 onClick={() => onDelete(h.id)}
                 className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 text-xs transition"
                 title="Delete"
@@ -69,6 +88,20 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear }: Props) {
                 ✕
               </button>
             </div>
+            {flash && flash.id === h.id && (
+              <div
+                className={
+                  'mt-1 ml-1 text-[10px] truncate ' +
+                  (flash.ok
+                    ? 'text-emerald-700 dark:text-emerald-300'
+                    : 'text-amber-700 dark:text-amber-300')
+                }
+                title={flash.message}
+              >
+                {flash.ok ? '✓ ' : '⚠ '}
+                {flash.message}
+              </div>
+            )}
           </li>
         ))}
       </ul>
