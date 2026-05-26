@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { shareCommandToClipboard } from '../lib/shareLink';
 import type { Folder, SavedCommand } from '../types';
 
 // "Uncategorized" sentinel matches the backend's matching rule for saved
@@ -259,6 +260,7 @@ export function SavedPage() {
               onToggleExpand={() => setExpandedRow((cur) => (cur === s.id ? null : s.id))}
               onPatch={(body) => patch(s.id, body)}
               onCopy={() => onCopy(s.command)}
+              onShare={() => shareCommandToClipboard(s.command, s.category ?? undefined)}
               onUseInBuilder={() => onUseInBuilder(s)}
               onDelete={() => onDeleteSaved(s)}
             />
@@ -336,6 +338,7 @@ interface SavedRowProps {
   onToggleExpand: () => void;
   onPatch: (body: Parameters<typeof api.saved.update>[1]) => void;
   onCopy: () => void;
+  onShare: () => Promise<{ ok: boolean; message: string }>;
   onUseInBuilder: () => void;
   onDelete: () => void;
 }
@@ -347,9 +350,16 @@ function SavedRow({
   onToggleExpand,
   onPatch,
   onCopy,
+  onShare,
   onUseInBuilder,
   onDelete
 }: SavedRowProps) {
+  const [shareFlash, setShareFlash] = useState<{ ok: boolean; message: string } | null>(null);
+  const handleShare = async () => {
+    const result = await onShare();
+    setShareFlash(result);
+    window.setTimeout(() => setShareFlash(null), 2500);
+  };
   const [labelDraft, setLabelDraft] = useState(row.label ?? '');
   const [notesDraft, setNotesDraft] = useState(row.notes ?? '');
   const [tagsDraft, setTagsDraft] = useState((row.tags ?? []).join(', '));
@@ -442,6 +452,17 @@ function SavedRow({
             Use
           </button>
           <button
+            onClick={handleShare}
+            title="Copy share link"
+            className="px-2 py-1 rounded border
+                       border-slate-300 dark:border-slate-700
+                       bg-white dark:bg-slate-800
+                       text-slate-700 dark:text-slate-300
+                       hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            Share
+          </button>
+          <button
             onClick={onToggleExpand}
             className="px-2 py-1 rounded border
                        border-slate-300 dark:border-slate-700
@@ -453,6 +474,20 @@ function SavedRow({
           </button>
         </div>
       </div>
+      {shareFlash && (
+        <div
+          className={
+            'text-[11px] ' +
+            (shareFlash.ok
+              ? 'text-emerald-700 dark:text-emerald-300'
+              : 'text-amber-700 dark:text-amber-300')
+          }
+          title={shareFlash.message}
+        >
+          {shareFlash.ok ? '✓ ' : '⚠ '}
+          {shareFlash.message}
+        </div>
+      )}
 
       {expanded && (
         <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
