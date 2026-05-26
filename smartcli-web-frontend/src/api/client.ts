@@ -1,6 +1,10 @@
 import type {
+  Folder,
   HistoryEntry,
   PlaceholderInfo,
+  SavedCommand,
+  SavedCommandCreate,
+  SavedCommandUpdate,
   Suggestion
 } from '../types';
 
@@ -45,6 +49,55 @@ export const api = {
     },
     clear(): Promise<void> {
       return request<void>('/history', { method: 'DELETE' });
+    }
+  },
+  folders: {
+    list(): Promise<Folder[]> {
+      return request<Folder[]>('/folders');
+    },
+    create(name: string, parentId?: string | null): Promise<Folder> {
+      return request<Folder>('/folders', {
+        method: 'POST',
+        body: JSON.stringify({ name, parentId: parentId ?? null })
+      });
+    },
+    rename(id: string, name: string): Promise<Folder> {
+      return request<Folder>(`/folders/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name })
+      });
+    },
+    delete(id: string): Promise<void> {
+      return request<void>(`/folders/${id}`, { method: 'DELETE' });
+    }
+  },
+  saved: {
+    // folder accepts a folder id, the sentinel "uncategorized", or undefined
+    // to skip the filter. tags is OR-combined server-side.
+    list(folder?: string, tags?: string[]): Promise<SavedCommand[]> {
+      const params = new URLSearchParams();
+      if (folder) params.set('folder', folder);
+      if (tags && tags.length) params.set('tags', tags.join(','));
+      const qs = params.toString();
+      return request<SavedCommand[]>('/saved' + (qs ? '?' + qs : ''));
+    },
+    tags(): Promise<string[]> {
+      return request<string[]>('/saved/tags');
+    },
+    create(body: SavedCommandCreate): Promise<SavedCommand> {
+      return request<SavedCommand>('/saved', {
+        method: 'POST',
+        body: JSON.stringify(body)
+      });
+    },
+    update(id: string, body: SavedCommandUpdate): Promise<SavedCommand> {
+      return request<SavedCommand>(`/saved/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body)
+      });
+    },
+    delete(id: string): Promise<void> {
+      return request<void>(`/saved/${id}`, { method: 'DELETE' });
     }
   }
 };

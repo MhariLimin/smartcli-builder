@@ -42,3 +42,46 @@ export type CommandTemplate = WithRequired<
   Schema<'CommandTemplate'>,
   'category' | 'template' | 'description'
 >;
+
+// TEMPORARY: Folder and SavedCommand types are hand-written here for the
+// Tier-3 #14 ship. Once a backend with the new endpoints is up, run
+// `npm run gen:api` against it to regenerate openapi.d.ts, then replace
+// these with the WithRequired<Schema<...>> pattern used above. The shape
+// here matches the backend's POJOs verbatim.
+export interface Folder {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  createdAt: string;
+}
+
+export interface SavedCommand {
+  id: string;
+  command: string;
+  label?: string | null;
+  category?: string | null;
+  folderId?: string | null;
+  tags: string[];
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Body shapes for POST /api/saved and PATCH /api/saved/{id}.
+export interface SavedCommandCreate {
+  command: string;
+  label?: string;
+  category?: string;
+  folderId?: string | null;
+  tags?: string[];
+  notes?: string;
+}
+
+export interface SavedCommandUpdate {
+  label?: string;
+  category?: string;
+  // Empty string clears the folder; null/undefined leaves it unchanged.
+  folderId?: string | null;
+  tags?: string[];
+  notes?: string;
+}
