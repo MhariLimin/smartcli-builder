@@ -4,6 +4,8 @@ server:
 smartcli-web:
   history-file: ${SMARTCLI_WEB_HISTORY_FILE:${user.home}/.smartcli-web/history.json}
   max-history: 200
+  folders-file: ${SMARTCLI_WEB_FOLDERS_FILE:${user.home}/.smartcli-web/folders.json}
+  saved-file: ${SMARTCLI_WEB_SAVED_FILE:${user.home}/.smartcli-web/saved.json}
   allowed-origins: ${SMARTCLI_WEB_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
 
 spring:
