@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { api } from '../api/client';
 import { PlaceholderForm } from './PlaceholderForm';
+import { SaveToFolderModal } from './SaveToFolderModal';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
 import { SuggestionList } from './SuggestionList';
 import type { HistoryEntry, PlaceholderInfo, Suggestion } from '../types';
@@ -128,6 +129,8 @@ export function BuilderView({
   const [helpOpen, setHelpOpen] = useState(false);
   const [copiedFlash, setCopiedFlash] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [savedToFolderFlash, setSavedToFolderFlash] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
 
   const debounceRef = useRef<number | null>(null);
 
@@ -389,8 +392,24 @@ export function BuilderView({
             >
               {copiedFlash ? 'Copied!' : 'Copy command'}
             </button>
+            <button
+              onClick={() => setSaveModalOpen(true)}
+              disabled={!trimmedCommand}
+              className="px-3 py-2 rounded text-sm font-medium border
+                         border-slate-300 dark:border-slate-700
+                         bg-white dark:bg-slate-800
+                         text-slate-800 dark:text-slate-200
+                         hover:bg-slate-100 dark:hover:bg-slate-700
+                         disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400
+                         transition"
+            >
+              Save to folder…
+            </button>
             {savedFlash && (
               <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ saved to history</span>
+            )}
+            {savedToFolderFlash && (
+              <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ saved to folder</span>
             )}
             <div className="ml-auto text-xs">
               {hasUnfilled && (
@@ -406,6 +425,17 @@ export function BuilderView({
         </div>
 
       {helpOpen && <ShortcutHelpModal isMac={isMac} onClose={() => setHelpOpen(false)} />}
+      {saveModalOpen && trimmedCommand && (
+        <SaveToFolderModal
+          command={command}
+          category={activeCategory}
+          onClose={() => setSaveModalOpen(false)}
+          onSaved={() => {
+            setSavedToFolderFlash(true);
+            setTimeout(() => setSavedToFolderFlash(false), 2000);
+          }}
+        />
+      )}
     </div>
   );
 }
