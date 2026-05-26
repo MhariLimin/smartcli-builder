@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { shareCommandToClipboard } from '../lib/shareLink';
 import type { CommandTemplate } from '../types';
 import { CATEGORY_DOCS, categoryLabel } from '../data/categoryDocs';
 
@@ -41,6 +42,8 @@ export function CatalogView({ onUseTemplate }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  // Inline flash for the most-recent Share — `template` is the matched row.
+  const [shareFlash, setShareFlash] = useState<{ template: string; ok: boolean; message: string } | null>(null);
 
   // Search state — initialized from `?q=` / `?cat=` on first mount so deep
   // links restore the same view.
@@ -126,6 +129,14 @@ export function CatalogView({ onUseTemplate }: Props) {
     }
     setCopied(template);
     window.setTimeout(() => setCopied((c) => (c === template ? null : c)), 1200);
+  };
+
+  const onShare = async (t: CommandTemplate) => {
+    const result = await shareCommandToClipboard(t.template, t.category);
+    setShareFlash({ template: t.template, ...result });
+    window.setTimeout(() => {
+      setShareFlash((cur) => (cur && cur.template === t.template ? null : cur));
+    }, 2500);
   };
 
   const toggleChip = (cat: string) => {
@@ -257,23 +268,47 @@ export function CatalogView({ onUseTemplate }: Props) {
                     </code>
                     <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">{t.description}</div>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <button
-                      onClick={() => onCopy(t.template)}
-                      className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
-                                 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
-                      title="Copy template to clipboard"
-                    >
-                      {copied === t.template ? 'Copied' : 'Copy'}
-                    </button>
-                    <button
-                      onClick={() => onUseTemplate(t.template, t.category)}
-                      className="text-xs px-2 py-1 rounded bg-sky-200 dark:bg-sky-900 hover:bg-sky-300 dark:hover:bg-sky-800
-                                 text-sky-800 dark:text-sky-100 border border-sky-400 dark:border-sky-700"
-                      title="Open this in the builder"
-                    >
-                      Use
-                    </button>
+                  <div className="flex flex-col gap-1 shrink-0 items-end">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => onCopy(t.template)}
+                        className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
+                                   text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                        title="Copy template to clipboard"
+                      >
+                        {copied === t.template ? 'Copied' : 'Copy'}
+                      </button>
+                      <button
+                        onClick={() => onShare(t)}
+                        className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
+                                   text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                        title="Copy share link"
+                      >
+                        Share
+                      </button>
+                      <button
+                        onClick={() => onUseTemplate(t.template, t.category)}
+                        className="text-xs px-2 py-1 rounded bg-sky-200 dark:bg-sky-900 hover:bg-sky-300 dark:hover:bg-sky-800
+                                   text-sky-800 dark:text-sky-100 border border-sky-400 dark:border-sky-700"
+                        title="Open this in the builder"
+                      >
+                        Use
+                      </button>
+                    </div>
+                    {shareFlash && shareFlash.template === t.template && (
+                      <span
+                        className={
+                          'text-[10px] truncate max-w-[20rem] ' +
+                          (shareFlash.ok
+                            ? 'text-emerald-700 dark:text-emerald-300'
+                            : 'text-amber-700 dark:text-amber-300')
+                        }
+                        title={shareFlash.message}
+                      >
+                        {shareFlash.ok ? '✓ ' : '⚠ '}
+                        {shareFlash.message}
+                      </span>
+                    )}
                   </div>
                 </div>
               </li>
@@ -336,23 +371,47 @@ export function CatalogView({ onUseTemplate }: Props) {
                   <code className="block font-mono text-sm text-slate-900 dark:text-slate-100 break-all">
                     {highlightTemplate(t.template)}
                   </code>
-                  <div className="flex gap-2 shrink-0">
-                    <button
-                      onClick={() => onCopy(t.template)}
-                      className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
-                                 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
-                      title="Copy template to clipboard"
-                    >
-                      {copied === t.template ? 'Copied' : 'Copy'}
-                    </button>
-                    <button
-                      onClick={() => onUseTemplate(t.template, t.category)}
-                      className="text-xs px-2 py-1 rounded bg-sky-200 dark:bg-sky-900 hover:bg-sky-300 dark:hover:bg-sky-800
-                                 text-sky-800 dark:text-sky-100 border border-sky-400 dark:border-sky-700"
-                      title="Open this in the builder"
-                    >
-                      Use
-                    </button>
+                  <div className="flex flex-col gap-1 shrink-0 items-end">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => onCopy(t.template)}
+                        className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
+                                   text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                        title="Copy template to clipboard"
+                      >
+                        {copied === t.template ? 'Copied' : 'Copy'}
+                      </button>
+                      <button
+                        onClick={() => onShare(t)}
+                        className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
+                                   text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                        title="Copy share link"
+                      >
+                        Share
+                      </button>
+                      <button
+                        onClick={() => onUseTemplate(t.template, t.category)}
+                        className="text-xs px-2 py-1 rounded bg-sky-200 dark:bg-sky-900 hover:bg-sky-300 dark:hover:bg-sky-800
+                                   text-sky-800 dark:text-sky-100 border border-sky-400 dark:border-sky-700"
+                        title="Open this in the builder"
+                      >
+                        Use
+                      </button>
+                    </div>
+                    {shareFlash && shareFlash.template === t.template && (
+                      <span
+                        className={
+                          'text-[10px] truncate max-w-[20rem] ' +
+                          (shareFlash.ok
+                            ? 'text-emerald-700 dark:text-emerald-300'
+                            : 'text-amber-700 dark:text-amber-300')
+                        }
+                        title={shareFlash.message}
+                      >
+                        {shareFlash.ok ? '✓ ' : '⚠ '}
+                        {shareFlash.message}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">{t.description}</div>
