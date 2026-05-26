@@ -19,6 +19,20 @@ export function BuilderPage() {
 
   const seedTemplate = searchParams.get('template') ?? '';
   const seedCategory = searchParams.get('category') ?? '';
+  const shareError = searchParams.get('share_error');
+
+  // Clear the share_error param off the URL after the user has had a moment
+  // to read it — refreshing or sharing this URL shouldn't re-surface the
+  // banner. Keep template/category since those are legitimate seed state.
+  useEffect(() => {
+    if (!shareError) return;
+    const t = window.setTimeout(() => {
+      const next = new URLSearchParams(searchParams);
+      next.delete('share_error');
+      setSearchParams(next, { replace: true });
+    }, 6000);
+    return () => window.clearTimeout(t);
+  }, [shareError, searchParams, setSearchParams]);
 
   // Every navigation to /?template=… increments resetSignal so BuilderView's
   // resetSignal effect reseeds its internal state. We bump it once when the
@@ -54,6 +68,16 @@ export function BuilderPage() {
 
   return (
     <div className="space-y-6">
+      {shareError && (
+        <div
+          role="status"
+          className="rounded border border-amber-300 dark:border-amber-700
+                     bg-amber-100 dark:bg-amber-900/40
+                     text-amber-800 dark:text-amber-200 text-sm px-3 py-2"
+        >
+          ⚠ Couldn't open share link — the payload was invalid or corrupted.
+        </div>
+      )}
       {recent.length > 0 && (
         <section
           aria-labelledby="recent-strip-heading"
