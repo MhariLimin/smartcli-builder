@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { api } from '../api/client';
 import { shareCommandToClipboard } from '../lib/shareLink';
 import type { CommandTemplate } from '../types';
 import { CATEGORY_DOCS, categoryLabel } from '../data/categoryDocs';
@@ -76,14 +77,14 @@ export function CatalogView({ onUseTemplate }: Props) {
   });
 
   // Single fetch on mount loads every template (~1718 rows, ~140KB). Kept in
-  // memory so search + detail-page filtering are both client-side.
+  // memory so search + detail-page filtering are both client-side. Routed
+  // through the api client so VITE_API_URL applies in production — a bare
+  // fetch('/api/templates') from the Vercel deploy hits the SPA-fallback
+  // rewrite and returns index.html instead of JSON.
   useEffect(() => {
     setLoading(true);
-    fetch('/api/templates')
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<CommandTemplate[]>;
-      })
+    api
+      .templates()
       .then((list) => {
         setAllTemplates(list);
         const tally: Record<string, number> = {};

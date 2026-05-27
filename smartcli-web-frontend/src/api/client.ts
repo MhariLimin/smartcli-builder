@@ -1,4 +1,5 @@
 import type {
+  CommandTemplate,
   Folder,
   HistoryEntry,
   PlaceholderInfo,
@@ -33,6 +34,10 @@ export const api = {
   },
   categories(): Promise<string[]> {
     return request<string[]>('/categories');
+  },
+  templates(category?: string): Promise<CommandTemplate[]> {
+    const qs = category ? `?category=${encodeURIComponent(category)}` : '';
+    return request<CommandTemplate[]>('/templates' + qs);
   },
   history: {
     list(): Promise<HistoryEntry[]> {
