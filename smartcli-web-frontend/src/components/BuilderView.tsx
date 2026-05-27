@@ -392,6 +392,25 @@ export function BuilderView({
     }
   }, [trimmedCommand, command, activeCategory, addHistory]);
 
+  // Wipe everything that follows from a non-empty command in one click:
+  // the command itself, the template lock, the placeholder form state, and
+  // any inline flashes. Returns focus to the input so the user can start
+  // typing immediately.
+  const clearInput = useCallback(() => {
+    setCommand('');
+    setActiveTemplate('');
+    setActiveCategory('');
+    setFilled({});
+    setShowSuggestions(true);
+    setActiveIndex(-1);
+    setCopiedFlash(false);
+    setSavedFlash(false);
+    setSavedToFolderFlash(false);
+    setShareFlash(null);
+    setShareError(null);
+    inputRef.current?.focus();
+  }, []);
+
   // Drop the template lock when the typed text can no longer match the
   // template's shape (modulo placeholder substitution). Substituting `<host>`
   // → `db.local` should NOT drop the lock; rewriting `get` → `describe` should.
@@ -528,24 +547,40 @@ export function BuilderView({
         </header>
 
         <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
-          <input
-            ref={inputRef}
-            type="text"
-            value={command}
-            onChange={(e) => onCommandChange(e.target.value)}
-            onKeyDown={onInputKeyDown}
-            placeholder="Start typing… e.g. 'kubectl get'"
-            className="w-full bg-white dark:bg-slate-950 px-4 py-3 font-mono text-base text-slate-900 dark:text-slate-100
-                       placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none border-b border-slate-200 dark:border-slate-800"
-            spellCheck={false}
-            autoComplete="off"
-            autoFocus
-            role="combobox"
-            aria-expanded={showSuggestions}
-            aria-controls={SUGGESTION_LISTBOX_ID}
-            aria-activedescendant={activeOptionId}
-            aria-autocomplete="list"
-          />
+          <div className="relative border-b border-slate-200 dark:border-slate-800">
+            <input
+              ref={inputRef}
+              type="text"
+              value={command}
+              onChange={(e) => onCommandChange(e.target.value)}
+              onKeyDown={onInputKeyDown}
+              placeholder="Start typing… e.g. 'kubectl get'"
+              className="w-full bg-white dark:bg-slate-950 px-4 py-3 pr-12 font-mono text-base text-slate-900 dark:text-slate-100
+                         placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none"
+              spellCheck={false}
+              autoComplete="off"
+              autoFocus
+              role="combobox"
+              aria-expanded={showSuggestions}
+              aria-controls={SUGGESTION_LISTBOX_ID}
+              aria-activedescendant={activeOptionId}
+              aria-autocomplete="list"
+            />
+            {command && (
+              <button
+                type="button"
+                onClick={clearInput}
+                title="Clear input"
+                aria-label="Clear input"
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center
+                           h-8 w-8 rounded text-slate-500 dark:text-slate-400
+                           hover:bg-slate-100 dark:hover:bg-slate-800
+                           hover:text-slate-900 dark:hover:text-slate-100 transition"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           {showSuggestions && (
             <SuggestionList
               items={displayedSuggestions}
