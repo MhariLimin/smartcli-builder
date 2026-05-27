@@ -649,6 +649,7 @@ export function BuilderView({
         <SaveToFolderModal
           command={command}
           category={activeCategory}
+          addHistory={addHistory}
           onClose={() => setSaveModalOpen(false)}
           onSaved={() => {
             setSavedToFolderFlash(true);

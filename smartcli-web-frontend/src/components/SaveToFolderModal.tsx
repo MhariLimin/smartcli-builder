@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
-import type { Folder } from '../types';
+import type { Folder, HistoryEntry } from '../types';
 import { FolderNameModal } from './FolderNameModal';
 
 interface Props {
@@ -8,13 +8,18 @@ interface Props {
   category: string;
   onClose: () => void;
   onSaved?: () => void;
+  // Optional history-add callback. When provided, a successful save also
+  // appends the command to history so the Recent strip / History page
+  // pick it up immediately. HistoryService dedupes by command text on the
+  // backend, so a command that was just copied won't show up twice.
+  addHistory?: (command: string, category: string) => Promise<HistoryEntry | null>;
 }
 
 // Modal launched from BuilderView's "Save to folder…" button. Lets the user
 // add a label, pick a folder (or create one inline), apply tags, and attach
 // notes before POSTing to /api/saved. Folder list is fetched on mount —
 // cheap, single-user, refetch on open is acceptable.
-export function SaveToFolderModal({ command, category, onClose, onSaved }: Props) {
+export function SaveToFolderModal({ command, category, onClose, onSaved, addHistory }: Props) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [folderId, setFolderId] = useState<string>('');
   const [label, setLabel] = useState('');
@@ -69,6 +74,12 @@ export function SaveToFolderModal({ command, category, onClose, onSaved }: Props
         tags: tagList,
         notes: notes.trim() || undefined
       });
+      // Mirror to history so the saved command also shows up as recent
+      // activity — fire-and-forget so a history failure doesn't block the
+      // canonical save UX.
+      if (addHistory) {
+        addHistory(command, category || 'misc').catch(() => {});
+      }
       onSaved?.();
       onClose();
     } catch (e2) {
