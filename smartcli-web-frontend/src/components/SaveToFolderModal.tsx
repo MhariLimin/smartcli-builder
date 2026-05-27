@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { suggestTags } from '../lib/autoTags';
 import type { Folder, HistoryEntry } from '../types';
 import { FolderNameModal } from './FolderNameModal';
 
@@ -23,7 +24,11 @@ export function SaveToFolderModal({ command, category, onClose, onSaved, addHist
   const [folders, setFolders] = useState<Folder[]>([]);
   const [folderId, setFolderId] = useState<string>('');
   const [label, setLabel] = useState('');
-  const [tags, setTags] = useState('');
+  // Seed the tag input with auto-detected tags inferred from the command
+  // (and category, if it came from a catalog template). Lazy initializer
+  // since command/category don't change while the modal is open. User can
+  // remove or add as usual — these are just suggestions, not enforced.
+  const [tags, setTags] = useState(() => suggestTags(command, category).join(', '));
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
