@@ -1,24 +1,64 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { shareCommandToClipboard } from '../lib/shareLink';
 import type { Folder, SavedCommand } from '../types';
+import { CopyIcon, EditIcon, ShareIcon, TrashIcon, UseIcon } from '../components/icons';
+import { FolderNameModal } from '../components/FolderNameModal';
+import { ConfirmModal } from '../components/ConfirmModal';
+
+const ROW_ICON_BUTTON =
+  'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
+  'border-slate-300 dark:border-slate-700 ' +
+  'bg-white dark:bg-slate-800 ' +
+  'text-slate-700 dark:text-slate-300 ' +
+  'hover:bg-slate-100 dark:hover:bg-slate-700';
+
+const ROW_USE_BUTTON =
+  'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
+  'border-sky-300 dark:border-sky-700 ' +
+  'bg-sky-100 dark:bg-sky-900/40 ' +
+  'text-sky-800 dark:text-sky-100 ' +
+  'hover:bg-sky-200 dark:hover:bg-sky-900/70';
 
 // "Uncategorized" sentinel matches the backend's matching rule for saved
 // commands with no folder. The Sidebar folder tree treats it as a virtual
 // folder that's always present.
 const UNCATEGORIZED = 'uncategorized';
 
+type SearchField = 'all' | 'label' | 'command' | 'tag';
+
+function readSearchField(value: string | null): SearchField {
+  return value === 'label' || value === 'command' || value === 'tag' ? value : 'all';
+}
+
 export function SavedPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Unified filter: pick a field to search against (label / command / tag /
+  // all) and a query string. Tag chips below the input give a one-click
+  // path to set both. Mirrored to ?q=&field= so the filter is deep-linkable.
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [searchField, setSearchField] = useState<SearchField>(() =>
+    readSearchField(searchParams.get('field'))
+  );
   const [folders, setFolders] = useState<Folder[]>([]);
   const [saved, setSaved] = useState<SavedCommand[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [activeFolder, setActiveFolder] = useState<string>(UNCATEGORIZED);
-  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  // Folder-name modal: null = closed; otherwise either 'create' or
+  // { mode: 'rename', target } so the same modal serves both flows.
+  const [folderModal, setFolderModal] = useState<
+    { mode: 'create' } | { mode: 'rename'; target: Folder } | null
+  >(null);
+  // Confirm-modal state — null while closed; otherwise the destructive
+  // action to confirm. Two flavours: folder delete + saved-command delete.
+  const [confirm, setConfirm] = useState<
+    { kind: 'folder'; target: Folder } | { kind: 'saved'; target: SavedCommand } | null
+  >(null);
 
   // Fetch everything once on mount; subsequent edits update state
   // optimistically rather than refetching.
@@ -49,57 +89,67 @@ export function SavedPage() {
     return map;
   }, [folders, saved]);
 
+  const trimmedQuery = query.trim().toLowerCase();
   const visible = useMemo(() => {
     return saved.filter((s) => {
       const folderKey = s.folderId ?? UNCATEGORIZED;
       if (folderKey !== activeFolder) return false;
-      if (activeTag && !(s.tags ?? []).includes(activeTag)) return false;
-      return true;
+      if (!trimmedQuery) return true;
+      switch (searchField) {
+        case 'label':
+          return (s.label ?? '').toLowerCase().includes(trimmedQuery);
+        case 'command':
+          return s.command.toLowerCase().includes(trimmedQuery);
+        case 'tag':
+          return (s.tags ?? []).some((t) => t.toLowerCase().includes(trimmedQuery));
+        case 'all':
+        default: {
+          const hay = `${s.label ?? ''} ${s.command} ${(s.tags ?? []).join(' ')}`.toLowerCase();
+          return hay.includes(trimmedQuery);
+        }
+      }
     });
-  }, [saved, activeFolder, activeTag]);
+  }, [saved, activeFolder, trimmedQuery, searchField]);
 
-  const onNewFolder = async () => {
-    const name = window.prompt('Folder name')?.trim();
-    if (!name) return;
-    try {
-      const created = await api.folders.create(name);
-      setFolders((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
-      setActiveFolder(created.id);
-    } catch (e) {
-      setError(String(e));
+  // Mirror search to ?q=&field= (replaceState semantics so the filter is
+  // deep-linkable without polluting back history).
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const q = query.trim();
+    if (q) next.set('q', q);
+    else next.delete('q');
+    if (searchField !== 'all') next.set('field', searchField);
+    else next.delete('field');
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
     }
+  }, [query, searchField, searchParams, setSearchParams]);
+
+  const submitNewFolder = async (name: string) => {
+    const created = await api.folders.create(name);
+    setFolders((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+    setActiveFolder(created.id);
   };
 
-  const onRenameFolder = async (folder: Folder) => {
-    const name = window.prompt('New folder name', folder.name)?.trim();
-    if (!name || name === folder.name) return;
-    try {
-      const updated = await api.folders.rename(folder.id, name);
-      setFolders((prev) =>
-        prev
-          .map((f) => (f.id === folder.id ? updated : f))
-          .sort((a, b) => a.name.localeCompare(b.name))
-      );
-    } catch (e) {
-      setError(String(e));
-    }
+  const submitRenameFolder = async (folder: Folder, name: string) => {
+    const updated = await api.folders.rename(folder.id, name);
+    setFolders((prev) =>
+      prev
+        .map((f) => (f.id === folder.id ? updated : f))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    );
   };
 
-  const onDeleteFolder = async (folder: Folder) => {
-    if (!window.confirm(`Delete folder "${folder.name}"? Saved commands inside it move to Uncategorized.`)) return;
-    try {
-      await api.folders.delete(folder.id);
-      setFolders((prev) => prev.filter((f) => f.id !== folder.id));
-      // Cascade: any saved commands pointing at this folder now have
-      // folderId=null on the server. Mirror that locally so the list
-      // updates without a refetch.
-      setSaved((prev) =>
-        prev.map((s) => (s.folderId === folder.id ? { ...s, folderId: null } : s))
-      );
-      if (activeFolder === folder.id) setActiveFolder(UNCATEGORIZED);
-    } catch (e) {
-      setError(String(e));
-    }
+  const performDeleteFolder = async (folder: Folder) => {
+    await api.folders.delete(folder.id);
+    setFolders((prev) => prev.filter((f) => f.id !== folder.id));
+    // Cascade: any saved commands pointing at this folder now have
+    // folderId=null on the server. Mirror that locally so the list
+    // updates without a refetch.
+    setSaved((prev) =>
+      prev.map((s) => (s.folderId === folder.id ? { ...s, folderId: null } : s))
+    );
+    if (activeFolder === folder.id) setActiveFolder(UNCATEGORIZED);
   };
 
   const patch = useCallback(
@@ -116,14 +166,9 @@ export function SavedPage() {
     []
   );
 
-  const onDeleteSaved = async (s: SavedCommand) => {
-    if (!window.confirm(`Delete saved command "${s.label || s.command}"?`)) return;
-    try {
-      await api.saved.delete(s.id);
-      setSaved((prev) => prev.filter((p) => p.id !== s.id));
-    } catch (e) {
-      setError(String(e));
-    }
+  const performDeleteSaved = async (s: SavedCommand) => {
+    await api.saved.delete(s.id);
+    setSaved((prev) => prev.filter((p) => p.id !== s.id));
   };
 
   const onUseInBuilder = (s: SavedCommand) => {
@@ -170,41 +215,96 @@ export function SavedPage() {
         </div>
       )}
 
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 items-center">
-          <span className="text-[10px] uppercase tracking-wide text-slate-500 mr-1">
-            Tag filter:
-          </span>
-          {tags.map((t) => {
-            const on = activeTag === t;
-            return (
-              <button
-                key={t}
-                onClick={() => setActiveTag(on ? null : t)}
-                aria-pressed={on}
-                className={
-                  'text-[11px] px-2 py-0.5 rounded border transition ' +
-                  (on
-                    ? 'bg-sky-200 text-sky-900 border-sky-400 dark:bg-sky-900 dark:text-sky-100 dark:border-sky-700'
-                    : 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700')
-                }
-              >
-                #{t}
-              </button>
-            );
-          })}
-          {activeTag && (
-            <button
-              onClick={() => setActiveTag(null)}
-              className="text-[11px] text-slate-500 underline hover:text-slate-700 dark:hover:text-slate-300"
+      <div
+        className="rounded-lg border border-slate-200 dark:border-slate-800
+                   bg-slate-50 dark:bg-slate-900 p-3 space-y-2"
+        aria-label="Filters"
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-slate-500">
+            Filter by
+            <select
+              value={searchField}
+              onChange={(e) => setSearchField(e.target.value as SearchField)}
+              className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded
+                         px-2 py-1 text-xs text-slate-900 dark:text-slate-100 normal-case tracking-normal
+                         focus:outline-none focus:border-sky-500"
             >
-              clear
-            </button>
-          )}
+              <option value="all">All</option>
+              <option value="label">Label</option>
+              <option value="command">Command</option>
+              <option value="tag">Tag</option>
+            </select>
+          </label>
+          <div className="relative flex-1 min-w-[12rem]">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={
+                searchField === 'label'
+                  ? 'Search by label…'
+                  : searchField === 'command'
+                  ? 'Search by command text…'
+                  : searchField === 'tag'
+                  ? 'Search by tag…'
+                  : 'Search label, command, or tag…'
+              }
+              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded
+                         px-3 py-1.5 font-mono text-sm text-slate-900 dark:text-slate-100
+                         placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-600"
+              spellCheck={false}
+              autoComplete="off"
+              aria-label="Search saved commands"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-600 dark:text-slate-400
+                           hover:text-slate-900 dark:hover:text-slate-200 px-1 rounded"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-4">
+        {tags.length > 0 && (searchField === 'tag' || searchField === 'all') && (
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <span className="text-[10px] uppercase tracking-wide text-slate-500 mr-1">
+              Tag quick-pick:
+            </span>
+            {tags.map((t) => {
+              const on = searchField === 'tag' && trimmedQuery === t.toLowerCase();
+              return (
+                <button
+                  key={t}
+                  onClick={() => {
+                    if (on) {
+                      setQuery('');
+                    } else {
+                      setSearchField('tag');
+                      setQuery(t);
+                    }
+                  }}
+                  aria-pressed={on}
+                  className={
+                    'text-[11px] px-2 py-0.5 rounded border transition ' +
+                    (on
+                      ? 'bg-sky-200 text-sky-900 border-sky-400 dark:bg-sky-900 dark:text-sky-100 dark:border-sky-700'
+                      : 'bg-white text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700')
+                  }
+                >
+                  #{t}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-4 items-start">
         <aside
           aria-label="Folder tree"
           className="rounded-lg border border-slate-200 dark:border-slate-800
@@ -215,7 +315,7 @@ export function SavedPage() {
               Folders
             </span>
             <button
-              onClick={onNewFolder}
+              onClick={() => setFolderModal({ mode: 'create' })}
               className="text-[11px] px-2 py-0.5 rounded border
                          border-sky-300 dark:border-sky-700
                          text-sky-700 dark:text-sky-300
@@ -237,8 +337,8 @@ export function SavedPage() {
               count={counts[f.id] ?? 0}
               active={activeFolder === f.id}
               onSelect={() => setActiveFolder(f.id)}
-              onRename={() => onRenameFolder(f)}
-              onDelete={() => onDeleteFolder(f)}
+              onRename={() => setFolderModal({ mode: 'rename', target: f })}
+              onDelete={() => setConfirm({ kind: 'folder', target: f })}
             />
           ))}
         </aside>
@@ -246,8 +346,8 @@ export function SavedPage() {
         <section className="space-y-2">
           {visible.length === 0 && (
             <div className="text-sm text-slate-500 italic bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-4">
-              {activeTag
-                ? `No saved commands match #${activeTag} here. Clear the tag filter or pick another folder.`
+              {trimmedQuery
+                ? `No saved commands match "${query.trim()}" in this folder (filter: ${searchField}).`
                 : 'No saved commands here yet. Use the "Save to folder…" button in the Builder.'}
             </div>
           )}
@@ -262,11 +362,45 @@ export function SavedPage() {
               onCopy={() => onCopy(s.command)}
               onShare={() => shareCommandToClipboard(s.command, s.category ?? undefined)}
               onUseInBuilder={() => onUseInBuilder(s)}
-              onDelete={() => onDeleteSaved(s)}
+              onDelete={() => setConfirm({ kind: 'saved', target: s })}
             />
           ))}
         </section>
       </div>
+
+      {folderModal && (
+        <FolderNameModal
+          mode={folderModal.mode}
+          initialValue={folderModal.mode === 'rename' ? folderModal.target.name : ''}
+          onSubmit={(name) =>
+            folderModal.mode === 'create'
+              ? submitNewFolder(name)
+              : submitRenameFolder(folderModal.target, name)
+          }
+          onClose={() => setFolderModal(null)}
+        />
+      )}
+
+      {confirm && confirm.kind === 'folder' && (
+        <ConfirmModal
+          title="Delete folder?"
+          message={`Delete folder "${confirm.target.name}"?\n\nSaved commands inside it move to Uncategorized.`}
+          confirmLabel="Delete folder"
+          destructive
+          onConfirm={() => performDeleteFolder(confirm.target)}
+          onClose={() => setConfirm(null)}
+        />
+      )}
+      {confirm && confirm.kind === 'saved' && (
+        <ConfirmModal
+          title="Delete saved command?"
+          message={`Delete "${confirm.target.label || confirm.target.command}"?\n\nThis cannot be undone.`}
+          confirmLabel="Delete"
+          destructive
+          onConfirm={() => performDeleteSaved(confirm.target)}
+          onClose={() => setConfirm(null)}
+        />
+      )}
     </div>
   );
 }
@@ -430,47 +564,47 @@ function SavedRow({
             </div>
           )}
         </div>
-        <div className="flex flex-col gap-1 shrink-0 text-xs">
+        <div className="flex flex-row gap-1 shrink-0 self-start">
           <button
             onClick={onCopy}
-            className="px-2 py-1 rounded border
-                       border-slate-300 dark:border-slate-700
-                       bg-white dark:bg-slate-800
-                       text-slate-700 dark:text-slate-300
-                       hover:bg-slate-100 dark:hover:bg-slate-700"
+            className={ROW_ICON_BUTTON}
+            title="Copy command"
+            aria-label="Copy command"
           >
-            Copy
-          </button>
-          <button
-            onClick={onUseInBuilder}
-            className="px-2 py-1 rounded border
-                       border-sky-300 dark:border-sky-700
-                       bg-sky-100 dark:bg-sky-900/40
-                       text-sky-800 dark:text-sky-100
-                       hover:bg-sky-200 dark:hover:bg-sky-900/70"
-          >
-            Use
+            <CopyIcon />
           </button>
           <button
             onClick={handleShare}
+            className={ROW_ICON_BUTTON}
             title="Copy share link"
-            className="px-2 py-1 rounded border
-                       border-slate-300 dark:border-slate-700
-                       bg-white dark:bg-slate-800
-                       text-slate-700 dark:text-slate-300
-                       hover:bg-slate-100 dark:hover:bg-slate-700"
+            aria-label="Copy share link"
           >
-            Share
+            <ShareIcon />
           </button>
           <button
             onClick={onToggleExpand}
-            className="px-2 py-1 rounded border
-                       border-slate-300 dark:border-slate-700
-                       bg-white dark:bg-slate-800
-                       text-slate-700 dark:text-slate-300
-                       hover:bg-slate-100 dark:hover:bg-slate-700"
+            className={ROW_ICON_BUTTON + (expanded ? ' bg-slate-100 dark:bg-slate-700' : '')}
+            title={expanded ? 'Collapse details' : 'Edit details'}
+            aria-label={expanded ? 'Collapse details' : 'Edit details'}
+            aria-expanded={expanded}
           >
-            {expanded ? 'Less' : 'Edit'}
+            <EditIcon />
+          </button>
+          <button
+            onClick={onDelete}
+            className={ROW_ICON_BUTTON + ' hover:text-rose-600 dark:hover:text-rose-300'}
+            title="Delete saved command"
+            aria-label="Delete saved command"
+          >
+            <TrashIcon />
+          </button>
+          <button
+            onClick={onUseInBuilder}
+            className={ROW_USE_BUTTON}
+            title="Use in Builder"
+            aria-label="Use in Builder"
+          >
+            <UseIcon />
           </button>
         </div>
       </div>
@@ -535,14 +669,29 @@ function SavedRow({
                          focus:outline-none focus:border-sky-500"
             />
           </label>
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between pt-1">
             <button
               onClick={onDelete}
-              className="text-xs px-2 py-1 rounded
-                         text-rose-700 dark:text-rose-300
-                         hover:bg-rose-100 dark:hover:bg-rose-900/30"
+              className={ROW_ICON_BUTTON + ' hover:text-rose-600 dark:hover:text-rose-300'}
+              title="Delete saved command"
+              aria-label="Delete saved command"
             >
-              Delete saved command
+              <TrashIcon />
+            </button>
+            <button
+              onClick={() => {
+                // Inputs commit on blur/Enter already, but the user might
+                // hit Save with focus still inside a field — explicitly flush
+                // every draft so the patch lands before we collapse.
+                commitLabel();
+                commitTags();
+                commitNotes();
+                onToggleExpand();
+              }}
+              className="px-3 py-1.5 text-sm font-medium rounded
+                         bg-sky-600 hover:bg-sky-500 text-white"
+            >
+              Save
             </button>
           </div>
         </div>
