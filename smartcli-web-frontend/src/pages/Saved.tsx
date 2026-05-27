@@ -495,16 +495,23 @@ function SavedRow({
     window.setTimeout(() => setShareFlash(null), 2500);
   };
   const [labelDraft, setLabelDraft] = useState(row.label ?? '');
+  // Drafts for the expanded edit form — staged locally and only flushed when
+  // Save is clicked. Re-seeded whenever the row data changes externally or
+  // the form (re)opens, so closing without Save discards in-flight edits.
   const [notesDraft, setNotesDraft] = useState(row.notes ?? '');
   const [tagsDraft, setTagsDraft] = useState((row.tags ?? []).join(', '));
+  const [folderDraft, setFolderDraft] = useState(row.folderId ?? '');
 
   useEffect(() => {
-    // External update (e.g. patch came back) — resync drafts.
     setLabelDraft(row.label ?? '');
     setNotesDraft(row.notes ?? '');
     setTagsDraft((row.tags ?? []).join(', '));
-  }, [row.id, row.label, row.notes, row.tags]);
+    setFolderDraft(row.folderId ?? '');
+  }, [row.id, row.label, row.notes, row.tags, row.folderId, expanded]);
 
+  // Label is the inline title above the action row, not part of the
+  // expanded form — keeps its onBlur/Enter commit semantics so users can
+  // edit it without opening Edit.
   const commitLabel = () => {
     const next = labelDraft.trim();
     if ((row.label ?? '') === next) return;
@@ -525,9 +532,11 @@ function SavedRow({
     onPatch({ tags: next });
   };
 
-  const onFolderChange = (folderId: string) => {
+  const commitFolder = () => {
+    const current = row.folderId ?? '';
+    if (current === folderDraft) return;
     // Empty string sentinel clears the folder on the backend.
-    onPatch({ folderId: folderId === '' ? '' : folderId });
+    onPatch({ folderId: folderDraft });
   };
 
   return (
@@ -629,8 +638,8 @@ function SavedRow({
             <label className="text-xs space-y-1">
               <span className="text-slate-600 dark:text-slate-400">Folder</span>
               <select
-                value={row.folderId ?? ''}
-                onChange={(e) => onFolderChange(e.target.value)}
+                value={folderDraft}
+                onChange={(e) => setFolderDraft(e.target.value)}
                 className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-1
                            text-slate-900 dark:text-slate-100"
               >
@@ -645,8 +654,6 @@ function SavedRow({
               <input
                 value={tagsDraft}
                 onChange={(e) => setTagsDraft(e.target.value)}
-                onBlur={commitTags}
-                onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLInputElement).blur()}
                 placeholder="docker, daily, prod"
                 className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-1
                            text-slate-900 dark:text-slate-100
@@ -660,7 +667,6 @@ function SavedRow({
             <textarea
               value={notesDraft}
               onChange={(e) => setNotesDraft(e.target.value)}
-              onBlur={commitNotes}
               rows={3}
               placeholder="Free-text context…"
               className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-1
@@ -678,21 +684,33 @@ function SavedRow({
             >
               <TrashIcon />
             </button>
-            <button
-              onClick={() => {
-                // Inputs commit on blur/Enter already, but the user might
-                // hit Save with focus still inside a field — explicitly flush
-                // every draft so the patch lands before we collapse.
-                commitLabel();
-                commitTags();
-                commitNotes();
-                onToggleExpand();
-              }}
-              className="px-3 py-1.5 text-sm font-medium rounded
-                         bg-sky-600 hover:bg-sky-500 text-white"
-            >
-              Save
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onToggleExpand}
+                className="px-3 py-1.5 text-sm rounded
+                           text-slate-700 dark:text-slate-300
+                           hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // Explicit save: flush every draft in the expanded form
+                  // (folder / tags / notes) plus the label above, then
+                  // collapse. Drafts get reseeded from row when the form
+                  // next opens.
+                  commitLabel();
+                  commitFolder();
+                  commitTags();
+                  commitNotes();
+                  onToggleExpand();
+                }}
+                className="px-3 py-1.5 text-sm font-medium rounded
+                           bg-sky-600 hover:bg-sky-500 text-white"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}
