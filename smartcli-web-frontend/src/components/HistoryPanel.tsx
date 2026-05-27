@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { shareCommandToClipboard } from '../lib/shareLink';
 import type { HistoryEntry } from '../types';
+import { ShareIcon, TrashIcon } from './icons';
+
+const ROW_ICON_BUTTON =
+  'inline-flex items-center justify-center h-7 w-7 rounded ' +
+  'text-slate-500 dark:text-slate-400 ' +
+  'hover:bg-slate-200 dark:hover:bg-slate-800 transition shrink-0';
 
 interface Props {
   history: HistoryEntry[];
@@ -75,17 +81,19 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear }: Props) {
               </div>
               <button
                 onClick={() => onShare(h)}
-                className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-sky-500 text-xs transition"
+                className={ROW_ICON_BUTTON + ' hover:text-sky-600 dark:hover:text-sky-300'}
                 title="Copy share link"
+                aria-label="Copy share link"
               >
-                ↗
+                <ShareIcon />
               </button>
               <button
                 onClick={() => onDelete(h.id)}
-                className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 text-xs transition"
+                className={ROW_ICON_BUTTON + ' hover:text-rose-600 dark:hover:text-rose-300'}
                 title="Delete"
+                aria-label="Delete entry"
               >
-                ✕
+                <TrashIcon />
               </button>
             </div>
             {flash && flash.id === h.id && (
