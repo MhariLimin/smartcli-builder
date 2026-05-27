@@ -2,6 +2,28 @@ import { useEffect, useMemo, useState } from 'react';
 import { shareCommandToClipboard } from '../lib/shareLink';
 import type { CommandTemplate } from '../types';
 import { CATEGORY_DOCS, categoryLabel } from '../data/categoryDocs';
+import { CopyIcon, ShareIcon, UseIcon } from './icons';
+
+const ROW_ICON_BUTTON =
+  'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
+  'border-slate-300 dark:border-slate-700 ' +
+  'bg-slate-100 dark:bg-slate-800 ' +
+  'text-slate-700 dark:text-slate-300 ' +
+  'hover:bg-slate-300 dark:hover:bg-slate-700';
+
+const ROW_USE_BUTTON =
+  'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
+  'border-sky-400 dark:border-sky-700 ' +
+  'bg-sky-200 dark:bg-sky-900 ' +
+  'text-sky-800 dark:text-sky-100 ' +
+  'hover:bg-sky-300 dark:hover:bg-sky-800';
+
+const COPIED_BUTTON =
+  'inline-flex items-center justify-center h-8 px-2 rounded border transition ' +
+  'border-emerald-400 dark:border-emerald-700 ' +
+  'bg-emerald-100 dark:bg-emerald-900/40 ' +
+  'text-[10px] font-semibold uppercase tracking-wide ' +
+  'text-emerald-800 dark:text-emerald-100';
 
 interface Props {
   onUseTemplate: (template: string, category: string) => void;
@@ -269,30 +291,34 @@ export function CatalogView({ onUseTemplate }: Props) {
                     <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">{t.description}</div>
                   </div>
                   <div className="flex flex-col gap-1 shrink-0 items-end">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onCopy(t.template)}
-                        className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
-                                   text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
-                        title="Copy template to clipboard"
-                      >
-                        {copied === t.template ? 'Copied' : 'Copy'}
-                      </button>
+                    <div className="flex gap-1">
+                      {copied === t.template ? (
+                        <span className={COPIED_BUTTON} aria-live="polite">Copied</span>
+                      ) : (
+                        <button
+                          onClick={() => onCopy(t.template)}
+                          className={ROW_ICON_BUTTON}
+                          title="Copy template to clipboard"
+                          aria-label="Copy template"
+                        >
+                          <CopyIcon />
+                        </button>
+                      )}
                       <button
                         onClick={() => onShare(t)}
-                        className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
-                                   text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                        className={ROW_ICON_BUTTON}
                         title="Copy share link"
+                        aria-label="Copy share link"
                       >
-                        Share
+                        <ShareIcon />
                       </button>
                       <button
                         onClick={() => onUseTemplate(t.template, t.category)}
-                        className="text-xs px-2 py-1 rounded bg-sky-200 dark:bg-sky-900 hover:bg-sky-300 dark:hover:bg-sky-800
-                                   text-sky-800 dark:text-sky-100 border border-sky-400 dark:border-sky-700"
+                        className={ROW_USE_BUTTON}
                         title="Open this in the builder"
+                        aria-label="Use in Builder"
                       >
-                        Use
+                        <UseIcon />
                       </button>
                     </div>
                     {shareFlash && shareFlash.template === t.template && (
@@ -372,30 +398,34 @@ export function CatalogView({ onUseTemplate }: Props) {
                     {highlightTemplate(t.template)}
                   </code>
                   <div className="flex flex-col gap-1 shrink-0 items-end">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onCopy(t.template)}
-                        className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
-                                   text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
-                        title="Copy template to clipboard"
-                      >
-                        {copied === t.template ? 'Copied' : 'Copy'}
-                      </button>
+                    <div className="flex gap-1">
+                      {copied === t.template ? (
+                        <span className={COPIED_BUTTON} aria-live="polite">Copied</span>
+                      ) : (
+                        <button
+                          onClick={() => onCopy(t.template)}
+                          className={ROW_ICON_BUTTON}
+                          title="Copy template to clipboard"
+                          aria-label="Copy template"
+                        >
+                          <CopyIcon />
+                        </button>
+                      )}
                       <button
                         onClick={() => onShare(t)}
-                        className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700
-                                   text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                        className={ROW_ICON_BUTTON}
                         title="Copy share link"
+                        aria-label="Copy share link"
                       >
-                        Share
+                        <ShareIcon />
                       </button>
                       <button
                         onClick={() => onUseTemplate(t.template, t.category)}
-                        className="text-xs px-2 py-1 rounded bg-sky-200 dark:bg-sky-900 hover:bg-sky-300 dark:hover:bg-sky-800
-                                   text-sky-800 dark:text-sky-100 border border-sky-400 dark:border-sky-700"
+                        className={ROW_USE_BUTTON}
                         title="Open this in the builder"
+                        aria-label="Use in Builder"
                       >
-                        Use
+                        <UseIcon />
                       </button>
                     </div>
                     {shareFlash && shareFlash.template === t.template && (
