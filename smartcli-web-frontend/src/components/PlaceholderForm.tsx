@@ -3,20 +3,22 @@ import type { PlaceholderInfo } from '../types';
 
 interface Props {
   placeholders: PlaceholderInfo[];
-  // Called with the literal slot text (e.g. "<port:int=22>") and the committed
-  // value. BuilderView substitutes by slot text so the typed grammar collapses
-  // correctly even when the same name appears with different specs.
-  onFill: (slot: string, value: string) => void;
+  // Current substituted value per slot. Undefined / empty for unfilled slots —
+  // the field then falls back to the slot's default value for display only.
+  values: Record<string, string>;
+  // Called on every keystroke for text/numeric inputs, and on every change
+  // for select/checkbox. Parent splices live into the command so the input
+  // bar tracks the field 1:1.
+  onChange: (slot: string, value: string) => void;
 }
 
-// Substitution commits on Enter or blur for text/numeric inputs, and on change
-// for selects/checkboxes — otherwise a typed slot would vanish from the command
-// after the first character and rip focus out of the input mid-typing.
-export function PlaceholderForm({ placeholders, onFill }: Props) {
-  // Seed each draft with the slot's default value so users running the common
-  // case can hit Enter without typing. Pruned when a slot leaves the list.
+export function PlaceholderForm({ placeholders, values, onChange }: Props) {
+  // Local drafts hold the raw text as typed, so an invalid value (e.g. "abc"
+  // in an int field) doesn't get clobbered by the parent's substituted form.
+  // The parent's `values` map is the substituted-in-command source of truth;
+  // these drafts are the displayed text.
   const [drafts, setDrafts] = useState<Record<string, string>>(() =>
-    seedDrafts(placeholders)
+    seedDrafts(placeholders, values)
   );
   const [errors, setErrors] = useState<Record<string, string | null>>({});
 
@@ -25,7 +27,9 @@ export function PlaceholderForm({ placeholders, onFill }: Props) {
     setDrafts((prev) => {
       const next: Record<string, string> = {};
       for (const p of placeholders) {
-        next[p.slot] = prev[p.slot] !== undefined ? prev[p.slot] : p.defaultValue ?? '';
+        if (values[p.slot] !== undefined) next[p.slot] = values[p.slot];
+        else if (prev[p.slot] !== undefined) next[p.slot] = prev[p.slot];
+        else next[p.slot] = p.defaultValue ?? '';
       }
       return next;
     });
@@ -36,27 +40,25 @@ export function PlaceholderForm({ placeholders, onFill }: Props) {
       }
       return next;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleKey]);
 
   if (placeholders.length === 0) return null;
 
-  const commit = (p: PlaceholderInfo) => {
-    const raw = drafts[p.slot] ?? '';
-    const v = raw.trim();
-    if (!v) return;
-    const err = validate(p, v);
-    if (err) {
-      setErrors((prev) => ({ ...prev, [p.slot]: err }));
+  // Live commit: text/numeric inputs propagate on every keystroke. Validation
+  // still runs so the user sees error states, but invalid values are still
+  // substituted — the input bar follows the field 1:1, even when wrong.
+  const handleChange = (p: PlaceholderInfo, value: string) => {
+    setDrafts((d) => ({ ...d, [p.slot]: value }));
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setErrors((e) => (e[p.slot] ? { ...e, [p.slot]: null } : e));
+      onChange(p.slot, '');
       return;
     }
-    setErrors((prev) => ({ ...prev, [p.slot]: null }));
-    onFill(p.slot, v);
-  };
-
-  const setDraft = (slot: string, value: string) => {
-    setDrafts((d) => ({ ...d, [slot]: value }));
-    // Clear any prior error eagerly — re-validation happens on commit.
-    setErrors((e) => (e[slot] ? { ...e, [slot]: null } : e));
+    const err = validate(p, trimmed);
+    setErrors((e) => ({ ...e, [p.slot]: err }));
+    onChange(p.slot, trimmed);
   };
 
   return (
@@ -64,7 +66,7 @@ export function PlaceholderForm({ placeholders, onFill }: Props) {
       <div className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 font-semibold">
         Fill placeholders{' '}
         <span className="font-normal normal-case text-slate-500">
-          — Enter or Tab substitutes into the command above
+          — the command above updates as you type
         </span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
@@ -74,19 +76,7 @@ export function PlaceholderForm({ placeholders, onFill }: Props) {
             placeholder={p}
             draft={drafts[p.slot] ?? ''}
             error={errors[p.slot] ?? null}
-            onDraftChange={(v) => setDraft(p.slot, v)}
-            onCommit={() => commit(p)}
-            onCommitValue={(v) => {
-              // Selects and checkboxes commit immediately on change; bypass
-              // the draft round-trip but still go through validation.
-              const err = validate(p, v);
-              if (err) {
-                setErrors((prev) => ({ ...prev, [p.slot]: err }));
-                return;
-              }
-              setErrors((prev) => ({ ...prev, [p.slot]: null }));
-              onFill(p.slot, v);
-            }}
+            onChange={(v) => handleChange(p, v)}
           />
         ))}
       </div>
@@ -94,9 +84,14 @@ export function PlaceholderForm({ placeholders, onFill }: Props) {
   );
 }
 
-function seedDrafts(placeholders: PlaceholderInfo[]): Record<string, string> {
+function seedDrafts(
+  placeholders: PlaceholderInfo[],
+  values: Record<string, string>
+): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const p of placeholders) out[p.slot] = p.defaultValue ?? '';
+  for (const p of placeholders) {
+    out[p.slot] = values[p.slot] !== undefined ? values[p.slot] : p.defaultValue ?? '';
+  }
   return out;
 }
 
@@ -125,19 +120,10 @@ interface FieldProps {
   placeholder: PlaceholderInfo;
   draft: string;
   error: string | null;
-  onDraftChange: (v: string) => void;
-  onCommit: () => void;
-  onCommitValue: (v: string) => void;
+  onChange: (v: string) => void;
 }
 
-function PlaceholderField({
-  placeholder: p,
-  draft,
-  error,
-  onDraftChange,
-  onCommit,
-  onCommitValue
-}: FieldProps) {
+function PlaceholderField({ placeholder: p, draft, error, onChange }: FieldProps) {
   const labelRow = (
     <div className="text-sm text-slate-800 dark:text-slate-200 font-medium">
       <span className="text-amber-700 dark:text-amber-300 font-mono">&lt;{p.name}&gt;</span>
@@ -160,7 +146,7 @@ function PlaceholderField({
         {labelRow}
         <select
           value={draft}
-          onChange={(e) => onCommitValue(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           className="mt-1 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2
                      text-sm font-mono text-slate-900 dark:text-slate-100
                      focus:outline-none focus:border-sky-500"
@@ -186,7 +172,7 @@ function PlaceholderField({
         <input
           type="checkbox"
           checked={checked}
-          onChange={(e) => onCommitValue(e.target.checked ? 'true' : 'false')}
+          onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
           className="h-4 w-4 accent-sky-500"
         />
         <div className="text-sm text-slate-800 dark:text-slate-200 font-medium">
@@ -208,14 +194,7 @@ function PlaceholderField({
         inputMode={numeric ? 'numeric' : undefined}
         step={p.type === 'float' ? 'any' : p.type === 'int' ? '1' : undefined}
         value={draft}
-        onChange={(e) => onDraftChange(e.target.value)}
-        onBlur={onCommit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            e.currentTarget.blur();
-          }
-        }}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={p.hint}
         className={`mt-1 w-full bg-white dark:bg-slate-950 border rounded px-3 py-2
                    text-sm font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600

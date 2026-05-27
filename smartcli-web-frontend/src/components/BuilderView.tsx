@@ -77,6 +77,30 @@ function templateMatcher(template: string): RegExp {
   return new RegExp('^' + pattern + '$');
 }
 
+// Find a `<...>` span that the caret falls inside, OR sits at the boundary of
+// in the direction of the deletion key. For Backspace the relevant boundary
+// is the trailing `>` (caret > start && caret <= end). For Delete it's the
+// leading `<` (caret >= start && caret < end). Returns null when no slot
+// matches — the caller falls through to the browser's default delete.
+function slotSpanAtCaret(
+  text: string,
+  caret: number,
+  key: 'Backspace' | 'Delete'
+): { start: number; end: number } | null {
+  const re = /<[^>]+>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const start = m.index;
+    const end = start + m[0].length;
+    if (key === 'Backspace') {
+      if (caret > start && caret <= end) return { start, end };
+    } else {
+      if (caret >= start && caret < end) return { start, end };
+    }
+  }
+  return null;
+}
+
 async function copyToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
   try {
@@ -136,6 +160,20 @@ export function BuilderView({
   const [shareError, setShareError] = useState<string | null>(null);
 
   const debounceRef = useRef<number | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  // Per-slot substituted value + its start index in `command`. Position
+  // tracking is required because split/join over the previous value would
+  // also rewrite unrelated text that happens to contain the same characters
+  // (e.g. typing "s" into a slot would replace the "s" in "describe" and
+  // "namespace" too). Subsequent edits splice exactly at the tracked range
+  // and shift the start indices of other entries by the resulting delta.
+  // A slot stays mounted in the placeholder form as long as either its
+  // literal `<...>` text or its tracked substituted value is still present.
+  const [filled, setFilled] = useState<Record<string, { value: string; start: number }>>({});
+  const filledRef = useRef(filled);
+  filledRef.current = filled;
+  const commandRef = useRef(command);
+  commandRef.current = command;
 
   // When the parent triggers a reset (e.g. user picked a template from the catalog), reseed state.
   useEffect(() => {
@@ -144,6 +182,7 @@ export function BuilderView({
     setActiveCategory(initialCategory);
     setShowSuggestions(true);
     setActiveIndex(-1);
+    setFilled({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetSignal]);
 
@@ -174,14 +213,49 @@ export function BuilderView({
     api.placeholders(activeTemplate).then(setPlaceholders);
   }, [activeTemplate]);
 
-  // Only show form rows for placeholder slots still literally present in the
-  // command. Slot match is by the full literal text (`<port:int=22>`, not
-  // just `<port>`) so the typed grammar substitutes correctly. As the user
-  // fills a slot, its slot text is replaced and the row disappears on its own.
+  // Show form rows for slots that are either still literally `<...>` in the
+  // command OR have a tracked substituted value at its expected position.
+  // Equality at the tracked range, not includes() over the whole command,
+  // so the row only stays mounted when the substitution is intact.
   const remainingPlaceholders = useMemo(
-    () => placeholders.filter((p) => command.includes(p.slot)),
-    [placeholders, command]
+    () =>
+      placeholders.filter((p) => {
+        if (command.includes(p.slot)) return true;
+        const e = filled[p.slot];
+        if (!e) return false;
+        return command.slice(e.start, e.start + e.value.length) === e.value;
+      }),
+    [placeholders, command, filled]
   );
+
+  // Plain string view of `filled` for PlaceholderForm. The form doesn't need
+  // to know about positions.
+  const placeholderValues = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const [slot, entry] of Object.entries(filled)) out[slot] = entry.value;
+    return out;
+  }, [filled]);
+
+  // Drop a filled entry when its tracked range no longer matches its value —
+  // covers the "user deleted the substituted text from the input bar" path.
+  // remainingPlaceholders then unmounts the row.
+  useEffect(() => {
+    setFilled((prev) => {
+      let changed = false;
+      const next: Record<string, { value: string; start: number }> = {};
+      for (const [slot, entry] of Object.entries(prev)) {
+        if (
+          entry.value &&
+          command.slice(entry.start, entry.start + entry.value.length) === entry.value
+        ) {
+          next[slot] = entry;
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [command]);
 
   const trimmedCommand = command.trim();
   const hasUnfilled = remainingPlaceholders.length > 0;
@@ -204,11 +278,76 @@ export function BuilderView({
     setActiveIndex(-1);
   }, []);
 
-  // Substitute by full slot text (e.g. "<port:int=22>" → "8080"), not by name,
-  // so typed slots collapse correctly. split().join() replaces all occurrences
-  // without regex escaping concerns.
-  const onFillPlaceholder = useCallback((slot: string, value: string) => {
-    setCommand((prev) => prev.split(slot).join(value));
+  // Live placeholder substitution. Position-tracked so we never re-write
+  // unrelated text that happens to share characters with the value being
+  // typed. Three cases:
+  //   1. value === '' — revert: splice the tracked range back to the
+  //      literal `<slot>` text so the user can keep editing.
+  //   2. previous entry's tracked range still equals its recorded value —
+  //      splice at that exact range with the new value.
+  //   3. otherwise (first fill OR drift) — fall back to indexOf(slot) over
+  //      the current command and splice there.
+  // After splicing, shift every other filled entry whose start was on or
+  // after the spliceEnd by the resulting length delta so their tracked
+  // positions stay accurate.
+  const onPlaceholderChange = useCallback((slot: string, value: string) => {
+    const cmd = commandRef.current;
+    const prevFilled = filledRef.current;
+    const prevEntry = prevFilled[slot];
+
+    let spliceStart: number;
+    let spliceEnd: number;
+    let replacement: string;
+    let nextEntry: { value: string; start: number } | null;
+
+    if (value === '') {
+      if (!prevEntry) return;
+      if (
+        cmd.slice(prevEntry.start, prevEntry.start + prevEntry.value.length) !== prevEntry.value
+      ) {
+        // Tracked range drifted — drop the entry without touching command.
+        const next = { ...prevFilled };
+        delete next[slot];
+        setFilled(next);
+        return;
+      }
+      spliceStart = prevEntry.start;
+      spliceEnd = prevEntry.start + prevEntry.value.length;
+      replacement = slot;
+      nextEntry = null;
+    } else if (
+      prevEntry &&
+      cmd.slice(prevEntry.start, prevEntry.start + prevEntry.value.length) === prevEntry.value
+    ) {
+      spliceStart = prevEntry.start;
+      spliceEnd = prevEntry.start + prevEntry.value.length;
+      replacement = value;
+      nextEntry = { value, start: spliceStart };
+    } else {
+      const idx = cmd.indexOf(slot);
+      if (idx === -1) return;
+      spliceStart = idx;
+      spliceEnd = idx + slot.length;
+      replacement = value;
+      nextEntry = { value, start: spliceStart };
+    }
+
+    const nextCmd = cmd.slice(0, spliceStart) + replacement + cmd.slice(spliceEnd);
+    const delta = replacement.length - (spliceEnd - spliceStart);
+
+    const nextFilled: Record<string, { value: string; start: number }> = {};
+    for (const [otherSlot, otherEntry] of Object.entries(prevFilled)) {
+      if (otherSlot === slot) continue;
+      if (otherEntry.start >= spliceEnd) {
+        nextFilled[otherSlot] = { value: otherEntry.value, start: otherEntry.start + delta };
+      } else {
+        nextFilled[otherSlot] = otherEntry;
+      }
+    }
+    if (nextEntry) nextFilled[slot] = nextEntry;
+
+    setCommand(nextCmd);
+    setFilled(nextFilled);
   }, []);
 
   // Share-by-link: encode the *substituted* command (not the template) so the
@@ -289,6 +428,36 @@ export function BuilderView({
         void onCopy();
         return;
       }
+      // Atomic placeholder deletion: Backspace/Delete with no selection that
+      // lands inside or at the boundary of a literal `<...>` slot removes the
+      // whole slot in one keystroke, including a surrounding single space so
+      // we don't leave a double-space hole.
+      if ((e.key === 'Backspace' || e.key === 'Delete') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const input = e.currentTarget;
+        const selStart = input.selectionStart;
+        const selEnd = input.selectionEnd;
+        if (selStart !== null && selEnd !== null && selStart === selEnd) {
+          const span = slotSpanAtCaret(command, selStart, e.key);
+          if (span) {
+            let { start, end } = span;
+            if (e.key === 'Backspace' && start > 0 && command[start - 1] === ' ') {
+              start -= 1;
+            } else if (e.key === 'Delete' && command[end] === ' ') {
+              end += 1;
+            }
+            e.preventDefault();
+            const next = command.slice(0, start) + command.slice(end);
+            onCommandChange(next);
+            // Restore caret to where the slot used to start, in the next paint.
+            window.requestAnimationFrame(() => {
+              if (inputRef.current) {
+                inputRef.current.setSelectionRange(start, start);
+              }
+            });
+            return;
+          }
+        }
+      }
       if (!showSuggestions) return;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -309,7 +478,8 @@ export function BuilderView({
         onSelectSuggestion(displayedSuggestions[activeIndex]);
       }
     },
-    [displayedSuggestions, showSuggestions, activeIndex, onCopy, onSelectSuggestion]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [displayedSuggestions, showSuggestions, activeIndex, onCopy, onSelectSuggestion, command]
   );
 
   // Shift-? opens the shortcut-help modal, but only when focus is outside any
@@ -359,6 +529,7 @@ export function BuilderView({
 
         <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
           <input
+            ref={inputRef}
             type="text"
             value={command}
             onChange={(e) => onCommandChange(e.target.value)}
@@ -403,7 +574,8 @@ export function BuilderView({
             <div className="border-t border-slate-200 dark:border-slate-800">
               <PlaceholderForm
                 placeholders={remainingPlaceholders}
-                onFill={onFillPlaceholder}
+                values={placeholderValues}
+                onChange={onPlaceholderChange}
               />
             </div>
           )}
