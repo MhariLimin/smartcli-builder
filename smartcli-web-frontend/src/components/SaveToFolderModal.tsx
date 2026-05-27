@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { Folder } from '../types';
+import { FolderNameModal } from './FolderNameModal';
 
 interface Props {
   command: string;
@@ -21,6 +22,7 @@ export function SaveToFolderModal({ command, category, onClose, onSaved }: Props
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [newFolderOpen, setNewFolderOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -35,22 +37,19 @@ export function SaveToFolderModal({ command, category, onClose, onSaved }: Props
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // While a nested modal is open, let it own the Escape key so we don't
+      // close both stacked modals on a single press.
+      if (newFolderOpen) return;
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, newFolderOpen]);
 
-  const onNewFolder = async () => {
-    const name = window.prompt('New folder name')?.trim();
-    if (!name) return;
-    try {
-      const created = await api.folders.create(name);
-      setFolders((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
-      setFolderId(created.id);
-    } catch (e) {
-      setError(String(e));
-    }
+  const onCreateFolder = async (name: string) => {
+    const created = await api.folders.create(name);
+    setFolders((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+    setFolderId(created.id);
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -144,7 +143,7 @@ export function SaveToFolderModal({ command, category, onClose, onSaved }: Props
             </select>
             <button
               type="button"
-              onClick={onNewFolder}
+              onClick={() => setNewFolderOpen(true)}
               className="text-xs px-3 py-2 rounded border
                          border-sky-300 dark:border-sky-700
                          text-sky-700 dark:text-sky-300
@@ -207,6 +206,13 @@ export function SaveToFolderModal({ command, category, onClose, onSaved }: Props
           </button>
         </div>
       </form>
+      {newFolderOpen && (
+        <FolderNameModal
+          mode="create"
+          onSubmit={onCreateFolder}
+          onClose={() => setNewFolderOpen(false)}
+        />
+      )}
     </div>
   );
 }
