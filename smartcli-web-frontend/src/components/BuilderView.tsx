@@ -122,6 +122,45 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
+type PreviewSeg = { text: string; kind: 'plain' | 'unfilled' | 'filled' };
+
+// Derive the read-only "Will copy" view from the canonical `command` string
+// (which already holds substituted values) plus the position-tracked `filled`
+// map. Unfilled `<slot>` literals render amber; tracked filled values render
+// green; everything else is plain. Purely derived — this is never a second
+// editable surface (see merged-input-preview), and since it renders `command`
+// verbatim it can never disagree with what Copy puts on the clipboard.
+function buildPreviewSegments(
+  command: string,
+  filled: Record<string, { value: string; start: number }>
+): PreviewSeg[] {
+  const ranges: { start: number; end: number; kind: 'unfilled' | 'filled' }[] = [];
+  const slotRe = /<[^>]+>/g;
+  let m: RegExpExecArray | null;
+  while ((m = slotRe.exec(command)) !== null) {
+    ranges.push({ start: m.index, end: m.index + m[0].length, kind: 'unfilled' });
+  }
+  for (const { value, start } of Object.values(filled)) {
+    // Only highlight when the tracked value is still intact at its recorded
+    // position, so a drifted entry never paints the wrong characters green.
+    if (value && command.slice(start, start + value.length) === value) {
+      ranges.push({ start, end: start + value.length, kind: 'filled' });
+    }
+  }
+  ranges.sort((a, b) => a.start - b.start);
+
+  const segs: PreviewSeg[] = [];
+  let cursor = 0;
+  for (const r of ranges) {
+    if (r.start < cursor) continue; // defensive: skip any overlap
+    if (r.start > cursor) segs.push({ text: command.slice(cursor, r.start), kind: 'plain' });
+    segs.push({ text: command.slice(r.start, r.end), kind: r.kind });
+    cursor = r.end;
+  }
+  if (cursor < command.length) segs.push({ text: command.slice(cursor), kind: 'plain' });
+  return segs;
+}
+
 interface Props {
   initialTemplate?: string;
   initialCategory?: string;
@@ -259,6 +298,13 @@ export function BuilderView({
   const trimmedCommand = command.trim();
   const hasUnfilled = remainingPlaceholders.length > 0;
   const isFreeForm = !activeTemplate && trimmedCommand.length > 0;
+
+  // Read-only "Will copy" preview. Shown only when highlighting adds
+  // information (an unfilled slot or a substituted value) so plain free-form
+  // text doesn't get a redundant echo of itself.
+  const previewSegments = useMemo(() => buildPreviewSegments(command, filled), [command, filled]);
+  const showPreview =
+    trimmedCommand.length > 0 && previewSegments.some((s) => s.kind !== 'plain');
 
   // Real backend suggestions take priority; starters fill the empty-query case.
   const startersActive = !trimmedCommand && suggestions.length === 0 && !loading;
@@ -655,6 +701,38 @@ export function BuilderView({
               )}
             </div>
           </div>
+
+          {showPreview && (
+            <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/30">
+              <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
+                Will copy
+              </div>
+              <div
+                className="font-mono text-sm text-slate-800 dark:text-slate-200 break-all whitespace-pre-wrap"
+                aria-label="Command that will be copied"
+              >
+                {previewSegments.map((seg, i) =>
+                  seg.kind === 'unfilled' ? (
+                    <span
+                      key={i}
+                      className="rounded px-1 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200"
+                    >
+                      {seg.text}
+                    </span>
+                  ) : seg.kind === 'filled' ? (
+                    <span
+                      key={i}
+                      className="rounded px-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200"
+                    >
+                      {seg.text}
+                    </span>
+                  ) : (
+                    <span key={i}>{seg.text}</span>
+                  )
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
       {helpOpen && <ShortcutHelpModal isMac={isMac} onClose={() => setHelpOpen(false)} />}
