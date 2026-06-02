@@ -7,6 +7,8 @@ import { CatalogPage } from './pages/Catalog';
 import { HistoryPage } from './pages/History';
 import { SavedPage } from './pages/Saved';
 import { ShareRedirect } from './pages/ShareRedirect';
+import { ToastProvider } from './hooks/useToast';
+import { ToastViewport } from './components/ToastViewport';
 import { api } from './api/client';
 
 export default function App() {
@@ -31,23 +33,26 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <div className="min-h-full">
-        <Header waking={waking} />
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 min-w-0 p-6 space-y-6">
-            <Routes>
-              <Route path="/" element={<BuilderPage />} />
-              <Route path="/saved" element={<SavedPage />} />
-              <Route path="/history" element={<HistoryPage />} />
-              <Route path="/catalog" element={<CatalogPage />} />
-              {/* /c/:payload decodes a share link and redirects to /. */}
-              <Route path="/c/:payload" element={<ShareRedirect />} />
-            </Routes>
-          </main>
+    <ToastProvider>
+      <BrowserRouter>
+        <div className="min-h-full">
+          <Header waking={waking} />
+          <div className="flex">
+            <Sidebar />
+            <main className="flex-1 min-w-0 p-6 space-y-6">
+              <Routes>
+                <Route path="/" element={<BuilderPage />} />
+                <Route path="/saved" element={<SavedPage />} />
+                <Route path="/history" element={<HistoryPage />} />
+                <Route path="/catalog" element={<CatalogPage />} />
+                {/* /c/:payload decodes a share link and redirects to /. */}
+                <Route path="/c/:payload" element={<ShareRedirect />} />
+              </Routes>
+            </main>
+          </div>
         </div>
-      </div>
-    </BrowserRouter>
+      </BrowserRouter>
+      <ToastViewport />
+    </ToastProvider>
   );
 }

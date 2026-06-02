@@ -5,3 +5,13 @@
 html, body, #root {
   height: 100%;
 }
+
+/* Toast entrance. Gated on no-preference so it is a no-op when the user asks
+   for reduced motion (the .toast-in class then carries no animation). */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .toast-in { animation: toast-in 150ms ease-out; }
+}

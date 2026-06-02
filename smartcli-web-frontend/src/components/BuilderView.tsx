@@ -6,6 +6,7 @@ import { PlaceholderForm } from './PlaceholderForm';
 import { SaveToFolderModal } from './SaveToFolderModal';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
 import { SuggestionList } from './SuggestionList';
+import { useToast } from '../hooks/useToast';
 import type { HistoryEntry, PlaceholderInfo, Suggestion } from '../types';
 
 const SUGGESTION_LISTBOX_ID = 'builder-suggestions';
@@ -152,12 +153,10 @@ export function BuilderView({
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [copiedFlash, setCopiedFlash] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(false);
-  const [savedToFolderFlash, setSavedToFolderFlash] = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [shareFlash, setShareFlash] = useState<string | null>(null);
-  const [shareError, setShareError] = useState<string | null>(null);
+  // All transient success/error feedback now goes through the shared toast
+  // channel instead of five separate inline-flash states + timers.
+  const toast = useToast();
 
   const debounceRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -355,23 +354,20 @@ export function BuilderView({
   // secret-pattern matches and on URLs that exceed the in-memory ceiling.
   const onShare = useCallback(async () => {
     if (!trimmedCommand) return;
-    setShareError(null);
-    setShareFlash(null);
     const result = encodeShare(command, activeCategory);
     if (!result.ok) {
-      setShareError(describeRefusal(result.refusal));
+      toast.error(describeRefusal(result.refusal));
       return;
     }
     try {
       await navigator.clipboard.writeText(result.url);
-      setShareFlash('link copied — anyone with it can read the command');
-      setTimeout(() => setShareFlash(null), 3000);
+      toast.success('Link copied — anyone with it can read the command');
     } catch {
-      // Clipboard refused (insecure context, permission denied) — show the
-      // URL so the user can copy it manually.
-      setShareError('Clipboard blocked. Link: ' + result.url);
+      // Clipboard refused (insecure context, permission denied) — surface the
+      // URL in a sticky error toast so the user can copy it manually.
+      toast.error('Clipboard blocked. Link: ' + result.url);
     }
-  }, [trimmedCommand, command, activeCategory]);
+  }, [trimmedCommand, command, activeCategory, toast]);
 
   // Copy → on success, also persist to history (Tier 2 #7). Persistence now
   // routes through the shared useHistory() hook the parent page owns, so the
@@ -381,16 +377,17 @@ export function BuilderView({
   const onCopy = useCallback(async () => {
     if (!trimmedCommand) return;
     const ok = await copyToClipboard(command);
-    if (!ok) return;
-    setCopiedFlash(true);
-    setTimeout(() => setCopiedFlash(false), 1500);
-    if (!addHistory) return;
-    const entry = await addHistory(command, activeCategory || 'misc');
-    if (entry) {
-      setSavedFlash(true);
-      setTimeout(() => setSavedFlash(false), 2000);
+    if (!ok) {
+      toast.error('Couldn’t copy to the clipboard — select and copy manually.');
+      return;
     }
-  }, [trimmedCommand, command, activeCategory, addHistory]);
+    if (!addHistory) {
+      toast.success('Copied to clipboard');
+      return;
+    }
+    const entry = await addHistory(command, activeCategory || 'misc');
+    toast.success(entry ? 'Copied — saved to history' : 'Copied to clipboard');
+  }, [trimmedCommand, command, activeCategory, addHistory, toast]);
 
   // Wipe everything that follows from a non-empty command in one click:
   // the command itself, the template lock, the placeholder form state, and
@@ -403,11 +400,6 @@ export function BuilderView({
     setFilled({});
     setShowSuggestions(true);
     setActiveIndex(-1);
-    setCopiedFlash(false);
-    setSavedFlash(false);
-    setSavedToFolderFlash(false);
-    setShareFlash(null);
-    setShareError(null);
     inputRef.current?.focus();
   }, []);
 
@@ -623,7 +615,7 @@ export function BuilderView({
                          bg-sky-600 hover:bg-sky-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 disabled:text-slate-500
                          transition"
             >
-              {copiedFlash ? 'Copied!' : 'Copy command'}
+              Copy command
             </button>
             <button
               onClick={() => setSaveModalOpen(true)}
@@ -652,20 +644,6 @@ export function BuilderView({
             >
               Share link
             </button>
-            {savedFlash && (
-              <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ saved to history</span>
-            )}
-            {savedToFolderFlash && (
-              <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ saved to folder</span>
-            )}
-            {shareFlash && (
-              <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ {shareFlash}</span>
-            )}
-            {shareError && (
-              <span className="text-xs text-amber-700 dark:text-amber-300 max-w-[24rem] truncate" title={shareError}>
-                ⚠ {shareError}
-              </span>
-            )}
             <div className="ml-auto text-xs">
               {hasUnfilled && (
                 <span className="text-amber-700 dark:text-amber-300">
@@ -686,10 +664,7 @@ export function BuilderView({
           category={activeCategory}
           addHistory={addHistory}
           onClose={() => setSaveModalOpen(false)}
-          onSaved={() => {
-            setSavedToFolderFlash(true);
-            setTimeout(() => setSavedToFolderFlash(false), 2000);
-          }}
+          onSaved={() => toast.success('Saved to folder')}
         />
       )}
     </div>
