@@ -6,11 +6,15 @@ import { PlaceholderForm } from './PlaceholderForm';
 import { SaveToFolderModal } from './SaveToFolderModal';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
 import { SuggestionList } from './SuggestionList';
+import { CheckIcon, CopyIcon } from './icons';
 import { useToast } from '../hooks/useToast';
 import type { HistoryEntry, PlaceholderInfo, Suggestion } from '../types';
 
 const SUGGESTION_LISTBOX_ID = 'builder-suggestions';
 const SUGGESTION_OPTION_PREFIX = 'builder-suggestion';
+
+// How long the Copy button shows its "Copied!" success state before reverting.
+const COPIED_FLASH_MS = 1500;
 
 // Detect Mac for the Cmd-Enter vs Ctrl-Enter shortcut. navigator.platform is
 // deprecated but still adequate and synchronous; navigator.userAgentData is
@@ -196,6 +200,11 @@ export function BuilderView({
   // All transient success/error feedback now goes through the shared toast
   // channel instead of five separate inline-flash states + timers.
   const toast = useToast();
+  // Purely-visual local feedback on the Copy button (icon→check, label→
+  // "Copied!", green flash + scale pulse), independent of the toast and of the
+  // actual copy/history side effect. Reverts after COPIED_FLASH_MS.
+  const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<number | null>(null);
 
   const debounceRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -420,6 +429,21 @@ export function BuilderView({
   // sidebar's History destination updates in lockstep without re-fetching.
   // HistoryService still dedupes by command text on the backend, so a
   // double-click still produces one row.
+  // Fire the local Copy-button success flash, restarting the revert timer on
+  // rapid re-clicks so the states never stack or revert mid-flash.
+  const flashCopied = useCallback(() => {
+    setCopied(true);
+    if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
+    copiedTimerRef.current = window.setTimeout(() => setCopied(false), COPIED_FLASH_MS);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
+    },
+    []
+  );
+
   const onCopy = useCallback(async () => {
     if (!trimmedCommand) return;
     const ok = await copyToClipboard(command);
@@ -427,13 +451,14 @@ export function BuilderView({
       toast.error('Couldn’t copy to the clipboard — select and copy manually.');
       return;
     }
+    flashCopied();
     if (!addHistory) {
       toast.success('Copied to clipboard');
       return;
     }
     const entry = await addHistory(command, activeCategory || 'misc');
     toast.success(entry ? 'Copied — saved to history' : 'Copied to clipboard');
-  }, [trimmedCommand, command, activeCategory, addHistory, toast]);
+  }, [trimmedCommand, command, activeCategory, addHistory, toast, flashCopied]);
 
   // Wipe everything that follows from a non-empty command in one click:
   // the command itself, the template lock, the placeholder form state, and
@@ -657,11 +682,21 @@ export function BuilderView({
             <button
               onClick={onCopy}
               disabled={!trimmedCommand}
-              className="px-4 py-2 rounded text-sm font-medium
-                         bg-sky-600 hover:bg-sky-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 disabled:text-slate-500
-                         transition"
+              aria-live="polite"
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded text-sm font-medium
+                         text-white transition disabled:bg-slate-200 dark:disabled:bg-slate-700 disabled:text-slate-500
+                         ${
+                           copied
+                             ? 'bg-emerald-600 hover:bg-emerald-500 copy-pulse'
+                             : 'bg-sky-600 hover:bg-sky-500'
+                         }`}
             >
-              Copy command
+              {copied ? (
+                <CheckIcon className="h-4 w-4" />
+              ) : (
+                <CopyIcon className="h-4 w-4" />
+              )}
+              {copied ? 'Copied!' : 'Copy command'}
             </button>
             <button
               onClick={() => setSaveModalOpen(true)}

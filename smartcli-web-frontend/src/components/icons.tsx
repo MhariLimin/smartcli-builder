@@ -34,6 +34,14 @@ export function CopyIcon(props: Props) {
   );
 }
 
+export function CheckIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
 export function TrashIcon(props: Props) {
   return (
     <svg {...base} {...props}>

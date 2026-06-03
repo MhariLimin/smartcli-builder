@@ -15,3 +15,15 @@ html, body, #root {
 @media (prefers-reduced-motion: no-preference) {
   .toast-in { animation: toast-in 150ms ease-out; }
 }
+
+/* Copy-button success pulse. Gated on no-preference so the .copy-pulse class
+   is a no-op (no scale animation) when the user asks for reduced motion — the
+   icon/label swap and green flash still convey success without movement. */
+@keyframes copy-pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .copy-pulse { animation: copy-pulse 150ms ease-out; }
+}
