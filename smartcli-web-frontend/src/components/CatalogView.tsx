@@ -4,6 +4,7 @@ import { shareCommandToClipboard } from '../lib/shareLink';
 import type { CommandTemplate } from '../types';
 import { CATEGORY_DOCS, categoryLabel } from '../data/categoryDocs';
 import { CopyIcon, ShareIcon, UseIcon } from './icons';
+import { EmptyState } from './EmptyState';
 
 const ROW_ICON_BUTTON =
   'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
@@ -258,9 +259,13 @@ export function CatalogView({ onUseTemplate }: Props) {
           )}
         </div>
         {!loading && count === 0 && (
-          <div className="text-sm text-slate-500 italic bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-4">
-            No templates match. Try fewer words, check spelling, or clear category chips.
-          </div>
+          <EmptyState
+            icon={<UseIcon width={18} height={18} />}
+            title="No templates match"
+            message="Try fewer words, check spelling, or clear category chips."
+            actionLabel="Clear search"
+            onAction={clearSearch}
+          />
         )}
         {!loading && count > 0 && (
           <ul className="space-y-2">
@@ -477,6 +482,15 @@ export function CatalogView({ onUseTemplate }: Props) {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {loading && (
           <div className="text-sm text-slate-500 col-span-full">Loading categories…</div>
+        )}
+        {!loading && categories.length === 0 && (
+          <div className="col-span-full">
+            <EmptyState
+              icon={<UseIcon width={18} height={18} />}
+              title="Catalog is empty"
+              message="No command categories were returned. Try reloading after the backend is available."
+            />
+          </div>
         )}
         {!loading &&
           categories.map((cat) => {

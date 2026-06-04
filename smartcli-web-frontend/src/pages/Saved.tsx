@@ -6,6 +6,7 @@ import type { Folder, SavedCommand } from '../types';
 import { CopyIcon, EditIcon, ShareIcon, TrashIcon, UseIcon } from '../components/icons';
 import { FolderNameModal } from '../components/FolderNameModal';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { EmptyState } from '../components/EmptyState';
 
 const ROW_ICON_BUTTON =
   'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
@@ -178,6 +179,10 @@ export function SavedPage() {
     navigate('/?' + params.toString());
   };
 
+  const goToBuilder = () => {
+    navigate('/');
+  };
+
   const onCopy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -345,11 +350,23 @@ export function SavedPage() {
 
         <section className="space-y-2">
           {visible.length === 0 && (
-            <div className="text-sm text-slate-500 italic bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-4">
-              {trimmedQuery
-                ? `No saved commands match "${query.trim()}" in this folder (filter: ${searchField}).`
-                : 'No saved commands here yet. Use the "Save to folder…" button in the Builder.'}
-            </div>
+            trimmedQuery ? (
+              <EmptyState
+                icon={<UseIcon width={18} height={18} />}
+                title="No saved commands match"
+                message={`Nothing in this folder matches "${query.trim()}" with the ${searchField} filter.`}
+                actionLabel="Clear search"
+                onAction={() => setQuery('')}
+              />
+            ) : (
+              <EmptyState
+                icon={<UseIcon width={18} height={18} />}
+                title="No saved commands here yet"
+                message="Build a command, then use Save to folder to keep it in this library."
+                actionLabel="Build one"
+                onAction={goToBuilder}
+              />
+            )
           )}
           {visible.map((s) => (
             <SavedRow

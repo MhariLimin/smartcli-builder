@@ -37,6 +37,7 @@ export function HistoryPage() {
             onReuse={onReuse}
             onDelete={remove}
             onClear={clear}
+            onOpenBuilder={() => navigate('/')}
           />
         )}
       </div>

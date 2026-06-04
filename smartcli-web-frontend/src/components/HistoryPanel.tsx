@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { shareCommandToClipboard } from '../lib/shareLink';
 import type { HistoryEntry } from '../types';
-import { ShareIcon, TrashIcon } from './icons';
+import { CopyIcon, ShareIcon, TrashIcon } from './icons';
+import { EmptyState } from './EmptyState';
 
 const ROW_ICON_BUTTON =
   'inline-flex items-center justify-center h-7 w-7 rounded ' +
@@ -13,9 +14,10 @@ interface Props {
   onReuse: (entry: HistoryEntry) => void;
   onDelete: (id: string) => void;
   onClear: () => void;
+  onOpenBuilder?: () => void;
 }
 
-export function HistoryPanel({ history, onReuse, onDelete, onClear }: Props) {
+export function HistoryPanel({ history, onReuse, onDelete, onClear, onOpenBuilder }: Props) {
   const [filter, setFilter] = useState('');
   // Inline flash per row — id of the row that just emitted a message.
   const [flash, setFlash] = useState<{ id: string; ok: boolean; message: string } | null>(null);
@@ -57,8 +59,24 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear }: Props) {
       />
       <ul className="divide-y divide-slate-200 dark:divide-slate-800 overflow-auto flex-1 -mx-1">
         {filtered.length === 0 && (
-          <li className="text-slate-500 text-sm italic px-2 py-4">
-            {history.length === 0 ? 'No saved commands yet.' : 'No matches.'}
+          <li className="px-1 py-2">
+            {history.length === 0 ? (
+              <EmptyState
+                icon={<CopyIcon width={18} height={18} />}
+                title="No commands yet"
+                message="Copied commands appear here automatically so you can reuse them later."
+                actionLabel={onOpenBuilder ? 'Open the Builder' : undefined}
+                onAction={onOpenBuilder}
+              />
+            ) : (
+              <EmptyState
+                icon={<CopyIcon width={18} height={18} />}
+                title="No history matches"
+                message="Clear the filter to see your recent commands again."
+                actionLabel="Clear filter"
+                onAction={() => setFilter('')}
+              />
+            )}
           </li>
         )}
         {filtered.map((h) => (
