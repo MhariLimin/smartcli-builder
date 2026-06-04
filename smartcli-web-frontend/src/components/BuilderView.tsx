@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { api } from '../api/client';
+import { classifyDestructiveCommand } from '../lib/destructive';
 import { describeRefusal, encode as encodeShare } from '../lib/shareLink';
 import { PlaceholderForm } from './PlaceholderForm';
 import { SaveToFolderModal } from './SaveToFolderModal';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
 import { SuggestionList } from './SuggestionList';
-import { CheckIcon, CopyIcon } from './icons';
+import { CheckIcon, CopyIcon, WarningIcon } from './icons';
 import { useToast } from '../hooks/useToast';
 import type { HistoryEntry, PlaceholderInfo, Suggestion } from '../types';
 
@@ -314,6 +315,7 @@ export function BuilderView({
   const previewSegments = useMemo(() => buildPreviewSegments(command, filled), [command, filled]);
   const showPreview =
     trimmedCommand.length > 0 && previewSegments.some((s) => s.kind !== 'plain');
+  const destructiveMatch = useMemo(() => classifyDestructiveCommand(command), [command]);
 
   // Real backend suggestions take priority; starters fill the empty-query case.
   const startersActive = !trimmedCommand && suggestions.length === 0 && !loading;
@@ -675,6 +677,20 @@ export function BuilderView({
                 values={placeholderValues}
                 onChange={onPlaceholderChange}
               />
+            </div>
+          )}
+
+          {destructiveMatch && (
+            <div className="border-t border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+              <div className="flex items-start gap-2">
+                <WarningIcon className="mt-0.5 h-4 w-4 flex-none text-amber-700 dark:text-amber-300" />
+                <div>
+                  <div className="font-semibold">Destructive command</div>
+                  <div className="mt-0.5 text-amber-900 dark:text-amber-200">
+                    {destructiveMatch.message}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
