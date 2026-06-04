@@ -593,7 +593,7 @@ export function BuilderView({
     activeIndex >= 0 ? `${SUGGESTION_OPTION_PREFIX}-${activeIndex}` : undefined;
 
   return (
-    <div className="space-y-6 min-w-0">
+    <div className="space-y-5 sm:space-y-6 min-w-0">
         <header className="space-y-1">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Build a command</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -620,7 +620,7 @@ export function BuilderView({
               onChange={(e) => onCommandChange(e.target.value)}
               onKeyDown={onInputKeyDown}
               placeholder="Start typing… e.g. 'kubectl get'"
-              className="w-full bg-white dark:bg-slate-950 px-4 py-3 pr-12 font-mono text-base text-slate-900 dark:text-slate-100
+              className="w-full min-h-12 bg-white dark:bg-slate-950 px-3 sm:px-4 py-3 pr-14 font-mono text-base text-slate-900 dark:text-slate-100
                          placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none"
               spellCheck={false}
               autoComplete="off"
@@ -637,8 +637,8 @@ export function BuilderView({
                 onClick={clearInput}
                 title="Clear input"
                 aria-label="Clear input"
-                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center
-                           h-8 w-8 rounded text-slate-500 dark:text-slate-400
+                className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center
+                           h-11 w-11 rounded text-slate-500 dark:text-slate-400
                            hover:bg-slate-100 dark:hover:bg-slate-800
                            hover:text-slate-900 dark:hover:text-slate-100 transition"
               >
@@ -663,7 +663,7 @@ export function BuilderView({
               Suggestions hidden —{' '}
               <button
                 onClick={() => setShowSuggestions(true)}
-                className="underline hover:text-sky-600 dark:hover:text-sky-300"
+                className="min-h-11 px-1 underline hover:text-sky-600 dark:hover:text-sky-300"
               >
                 show again
               </button>
@@ -694,12 +694,12 @@ export function BuilderView({
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-950/40">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 px-3 sm:px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-950/40">
             <button
               onClick={onCopy}
               disabled={!trimmedCommand}
               aria-live="polite"
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded text-sm font-medium
+              className={`inline-flex min-h-11 w-full sm:w-auto items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium
                          text-white transition disabled:bg-slate-200 dark:disabled:bg-slate-700 disabled:text-slate-500
                          ${
                            copied
@@ -717,7 +717,7 @@ export function BuilderView({
             <button
               onClick={() => setSaveModalOpen(true)}
               disabled={!trimmedCommand}
-              className="px-3 py-2 rounded text-sm font-medium border
+              className="min-h-11 w-full sm:w-auto px-3 py-2 rounded text-sm font-medium border
                          border-slate-300 dark:border-slate-700
                          bg-white dark:bg-slate-800
                          text-slate-800 dark:text-slate-200
@@ -731,7 +731,7 @@ export function BuilderView({
               onClick={onShare}
               disabled={!trimmedCommand}
               title="Copy a share link to the clipboard"
-              className="px-3 py-2 rounded text-sm font-medium border
+              className="min-h-11 w-full sm:w-auto px-3 py-2 rounded text-sm font-medium border
                          border-slate-300 dark:border-slate-700
                          bg-white dark:bg-slate-800
                          text-slate-800 dark:text-slate-200
@@ -741,7 +741,7 @@ export function BuilderView({
             >
               Share link
             </button>
-            <div className="ml-auto text-xs">
+            <div className="w-full sm:w-auto sm:ml-auto text-xs">
               {hasUnfilled && (
                 <span className="text-amber-700 dark:text-amber-300">
                   placeholders still empty — fill above or edit the line directly

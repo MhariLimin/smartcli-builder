@@ -53,12 +53,12 @@ export function Header({ waking }: Props) {
                  border-b-2 border-sky-500/60
                  shadow-md shadow-slate-300/40 dark:shadow-black/40"
     >
-      <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-4">
+      <div className="max-w-[1400px] mx-auto px-3 sm:px-6 py-2 sm:py-4 flex items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <img
             src="/Header_logo.png"
             alt="smartcli-web logo"
-            className="h-20 w-auto select-none"
+            className="h-14 sm:h-20 w-auto select-none"
             draggable={false}
           />
           <div className="hidden sm:flex flex-col leading-tight min-w-0">
@@ -74,10 +74,10 @@ export function Header({ waking }: Props) {
         {/* Primary navigation moved to the left Sidebar component as part of
             Tier-3 #13. The header now only carries product chrome (logo,
             warm-wake pill, account dropdown). */}
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
           {waking && (
             <span
-              className="text-xs px-2 py-1 rounded border
+              className="min-h-11 inline-flex items-center text-xs px-2 py-1 rounded border
                          border-amber-300 dark:border-amber-700
                          bg-amber-100 dark:bg-amber-900/40
                          text-amber-800 dark:text-amber-200 animate-pulse"
@@ -95,7 +95,7 @@ export function Header({ waking }: Props) {
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             aria-label="Account menu"
-            className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1
+            className="flex min-h-11 items-center gap-2 rounded-full pl-1 pr-2 sm:pr-3 py-1
                        bg-white dark:bg-slate-800
                        border border-slate-200 dark:border-slate-700
                        hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm"
@@ -140,7 +140,7 @@ export function Header({ waking }: Props) {
                       aria-checked={active}
                       onClick={() => setMode(opt.mode)}
                       className={
-                        'flex w-full items-center justify-between gap-2 px-3 py-1.5 rounded transition ' +
+                        'flex min-h-11 w-full items-center justify-between gap-2 px-3 py-1.5 rounded transition ' +
                         (active
                           ? 'bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-100'
                           : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800')
@@ -184,7 +184,7 @@ function MenuItem({
     <button
       role="menuitem"
       onClick={onClick}
-      className="block w-full text-left px-3 py-1.5 text-slate-700 dark:text-slate-200
+      className="block min-h-11 w-full text-left px-3 py-1.5 text-slate-700 dark:text-slate-200
                  hover:bg-slate-100 dark:hover:bg-slate-800 transition"
     >
       {children}

@@ -39,7 +39,7 @@ export default function App() {
           <Header waking={waking} />
           <div className="flex">
             <Sidebar />
-            <main className="flex-1 min-w-0 p-6 space-y-6">
+            <main className="flex-1 min-w-0 px-3 sm:px-6 py-4 sm:py-6 space-y-6">
               <Routes>
                 <Route path="/" element={<BuilderPage />} />
                 <Route path="/saved" element={<SavedPage />} />

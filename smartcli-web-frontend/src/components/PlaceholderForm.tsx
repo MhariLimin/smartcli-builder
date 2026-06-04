@@ -62,7 +62,7 @@ export function PlaceholderForm({ placeholders, values, onChange }: Props) {
   };
 
   return (
-    <div className="px-4 py-3 space-y-3 bg-slate-50 dark:bg-slate-900">
+    <div className="px-3 sm:px-4 py-3 space-y-3 bg-slate-50 dark:bg-slate-900">
       <div className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 font-semibold">
         Fill placeholders{' '}
         <span className="font-normal normal-case text-slate-500">
@@ -125,14 +125,14 @@ interface FieldProps {
 
 function PlaceholderField({ placeholder: p, draft, error, onChange }: FieldProps) {
   const labelRow = (
-    <div className="text-sm text-slate-800 dark:text-slate-200 font-medium">
+    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-slate-800 dark:text-slate-200 font-medium">
       <span className="text-amber-700 dark:text-amber-300 font-mono">&lt;{p.name}&gt;</span>
       {p.type && (
-        <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-500">
+        <span className="text-[10px] uppercase tracking-wide text-slate-500">
           {p.type === 'enum' ? 'select' : p.type}
         </span>
       )}
-      <span className="ml-2 text-slate-600 dark:text-slate-400 text-xs">{p.label}</span>
+      <span className="text-slate-600 dark:text-slate-400 text-xs">{p.label}</span>
     </div>
   );
 
@@ -147,7 +147,7 @@ function PlaceholderField({ placeholder: p, draft, error, onChange }: FieldProps
         <select
           value={draft}
           onChange={(e) => onChange(e.target.value)}
-          className="mt-1 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2
+          className="mt-1 min-h-11 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2
                      text-sm font-mono text-slate-900 dark:text-slate-100
                      focus:outline-none focus:border-sky-500"
         >
@@ -168,17 +168,17 @@ function PlaceholderField({ placeholder: p, draft, error, onChange }: FieldProps
   if (p.type === 'bool') {
     const checked = draft === 'true';
     return (
-      <label className="flex items-center gap-2">
+      <label className="flex min-h-11 items-center gap-3">
         <input
           type="checkbox"
           checked={checked}
           onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
-          className="h-4 w-4 accent-sky-500"
+          className="h-5 w-5 accent-sky-500"
         />
-        <div className="text-sm text-slate-800 dark:text-slate-200 font-medium">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-slate-800 dark:text-slate-200 font-medium">
           <span className="text-amber-700 dark:text-amber-300 font-mono">&lt;{p.name}&gt;</span>
-          <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-500">bool</span>
-          <span className="ml-2 text-slate-600 dark:text-slate-400 text-xs">{p.label}</span>
+          <span className="text-[10px] uppercase tracking-wide text-slate-500">bool</span>
+          <span className="text-slate-600 dark:text-slate-400 text-xs">{p.label}</span>
         </div>
       </label>
     );
@@ -196,7 +196,7 @@ function PlaceholderField({ placeholder: p, draft, error, onChange }: FieldProps
         value={draft}
         onChange={(e) => onChange(e.target.value)}
         placeholder={p.hint}
-        className={`mt-1 w-full bg-white dark:bg-slate-950 border rounded px-3 py-2
+        className={`mt-1 min-h-11 w-full bg-white dark:bg-slate-950 border rounded px-3 py-2
                    text-sm font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600
                    focus:outline-none focus:border-sky-500
                    ${error ? 'border-rose-600' : 'border-slate-300 dark:border-slate-700'}`}

@@ -62,12 +62,12 @@ export function Sidebar() {
   return (
     <aside
       aria-label="Primary navigation"
-      className="shrink-0 sticky top-[88px] self-start
+      className="shrink-0 sticky top-[73px] sm:top-[88px] self-start
                  w-14 sm:w-56 transition-[width]
                  px-2 sm:px-3 py-4
                  border-r border-slate-200 dark:border-slate-800
                  bg-slate-50 dark:bg-slate-950/60
-                 h-[calc(100vh-88px)]"
+                 h-[calc(100vh-73px)] sm:h-[calc(100vh-88px)]"
     >
       <nav>
         <ul className="space-y-1">
@@ -77,7 +77,7 @@ export function Sidebar() {
                 to={item.to}
                 end={item.to === '/'}
                 className={({ isActive }) =>
-                  'group flex items-center gap-3 rounded-md px-2 py-2 ' +
+                  'group flex min-h-11 items-center justify-center sm:justify-start gap-3 rounded-md px-2 py-2 ' +
                   'transition border border-transparent ' +
                   (isActive
                     ? 'bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-100 ' +
