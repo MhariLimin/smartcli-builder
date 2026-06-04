@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
+import { CommandPalette } from './components/CommandPalette';
 import { BuilderPage } from './pages/Builder';
 import { CatalogPage } from './pages/Catalog';
 import { HistoryPage } from './pages/History';
@@ -13,6 +14,7 @@ import { api } from './api/client';
 
 export default function App() {
   const [waking, setWaking] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const warmWakeFired = useRef(false);
 
   // Warm-wake: on mount, fire a no-op request so the (possibly sleeping)
@@ -30,6 +32,16 @@ export default function App() {
         window.clearTimeout(showAt);
         setWaking(false);
       });
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'k' || (!e.ctrlKey && !e.metaKey)) return;
+      e.preventDefault();
+      setPaletteOpen((open) => !open);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   return (
@@ -50,6 +62,7 @@ export default function App() {
               </Routes>
             </main>
           </div>
+          <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
         </div>
       </BrowserRouter>
       <ToastViewport />
