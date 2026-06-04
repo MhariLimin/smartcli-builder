@@ -7,6 +7,7 @@ import { CopyIcon, EditIcon, ShareIcon, TrashIcon, UseIcon } from '../components
 import { FolderNameModal } from '../components/FolderNameModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { EmptyState } from '../components/EmptyState';
+import { Skeleton, SkeletonBar, SkeletonRow } from '../components/Skeleton';
 
 const ROW_ICON_BUTTON =
   'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
@@ -196,10 +197,6 @@ export function SavedPage() {
     }
   };
 
-  if (loading) {
-    return <div className="text-sm text-slate-500">Loading saved commands…</div>;
-  }
-
   return (
     <div className="space-y-4">
       <header className="space-y-1">
@@ -310,79 +307,85 @@ export function SavedPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-4 items-start">
-        <aside
-          aria-label="Folder tree"
-          className="rounded-lg border border-slate-200 dark:border-slate-800
-                     bg-slate-50 dark:bg-slate-900 p-3 space-y-1"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-wide font-semibold text-slate-600 dark:text-slate-400">
-              Folders
-            </span>
-            <button
-              onClick={() => setFolderModal({ mode: 'create' })}
-              className="text-[11px] px-2 py-0.5 rounded border
-                         border-sky-300 dark:border-sky-700
-                         text-sky-700 dark:text-sky-300
-                         hover:bg-sky-100 dark:hover:bg-sky-900/40 transition"
+        {loading ? (
+          <SavedLoadingState />
+        ) : (
+          <>
+            <aside
+              aria-label="Folder tree"
+              className="rounded-lg border border-slate-200 dark:border-slate-800
+                         bg-slate-50 dark:bg-slate-900 p-3 space-y-1"
             >
-              + New
-            </button>
-          </div>
-          <FolderRow
-            label="Uncategorized"
-            count={counts[UNCATEGORIZED] ?? 0}
-            active={activeFolder === UNCATEGORIZED}
-            onSelect={() => setActiveFolder(UNCATEGORIZED)}
-          />
-          {folders.map((f) => (
-            <FolderRow
-              key={f.id}
-              label={f.name}
-              count={counts[f.id] ?? 0}
-              active={activeFolder === f.id}
-              onSelect={() => setActiveFolder(f.id)}
-              onRename={() => setFolderModal({ mode: 'rename', target: f })}
-              onDelete={() => setConfirm({ kind: 'folder', target: f })}
-            />
-          ))}
-        </aside>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-slate-600 dark:text-slate-400">
+                  Folders
+                </span>
+                <button
+                  onClick={() => setFolderModal({ mode: 'create' })}
+                  className="text-[11px] px-2 py-0.5 rounded border
+                             border-sky-300 dark:border-sky-700
+                             text-sky-700 dark:text-sky-300
+                             hover:bg-sky-100 dark:hover:bg-sky-900/40 transition"
+                >
+                  + New
+                </button>
+              </div>
+              <FolderRow
+                label="Uncategorized"
+                count={counts[UNCATEGORIZED] ?? 0}
+                active={activeFolder === UNCATEGORIZED}
+                onSelect={() => setActiveFolder(UNCATEGORIZED)}
+              />
+              {folders.map((f) => (
+                <FolderRow
+                  key={f.id}
+                  label={f.name}
+                  count={counts[f.id] ?? 0}
+                  active={activeFolder === f.id}
+                  onSelect={() => setActiveFolder(f.id)}
+                  onRename={() => setFolderModal({ mode: 'rename', target: f })}
+                  onDelete={() => setConfirm({ kind: 'folder', target: f })}
+                />
+              ))}
+            </aside>
 
-        <section className="space-y-2">
-          {visible.length === 0 && (
-            trimmedQuery ? (
-              <EmptyState
-                icon={<UseIcon width={18} height={18} />}
-                title="No saved commands match"
-                message={`Nothing in this folder matches "${query.trim()}" with the ${searchField} filter.`}
-                actionLabel="Clear search"
-                onAction={() => setQuery('')}
-              />
-            ) : (
-              <EmptyState
-                icon={<UseIcon width={18} height={18} />}
-                title="No saved commands here yet"
-                message="Build a command, then use Save to folder to keep it in this library."
-                actionLabel="Build one"
-                onAction={goToBuilder}
-              />
-            )
-          )}
-          {visible.map((s) => (
-            <SavedRow
-              key={s.id}
-              row={s}
-              folders={folders}
-              expanded={expandedRow === s.id}
-              onToggleExpand={() => setExpandedRow((cur) => (cur === s.id ? null : s.id))}
-              onPatch={(body) => patch(s.id, body)}
-              onCopy={() => onCopy(s.command)}
-              onShare={() => shareCommandToClipboard(s.command, s.category ?? undefined)}
-              onUseInBuilder={() => onUseInBuilder(s)}
-              onDelete={() => setConfirm({ kind: 'saved', target: s })}
-            />
-          ))}
-        </section>
+            <section className="space-y-2">
+              {visible.length === 0 && (
+                trimmedQuery ? (
+                  <EmptyState
+                    icon={<UseIcon width={18} height={18} />}
+                    title="No saved commands match"
+                    message={`Nothing in this folder matches "${query.trim()}" with the ${searchField} filter.`}
+                    actionLabel="Clear search"
+                    onAction={() => setQuery('')}
+                  />
+                ) : (
+                  <EmptyState
+                    icon={<UseIcon width={18} height={18} />}
+                    title="No saved commands here yet"
+                    message="Build a command, then use Save to folder to keep it in this library."
+                    actionLabel="Build one"
+                    onAction={goToBuilder}
+                  />
+                )
+              )}
+              {visible.map((s) => (
+                <SavedRow
+                  key={s.id}
+                  row={s}
+                  folders={folders}
+                  expanded={expandedRow === s.id}
+                  onToggleExpand={() => setExpandedRow((cur) => (cur === s.id ? null : s.id))}
+                  onPatch={(body) => patch(s.id, body)}
+                  onCopy={() => onCopy(s.command)}
+                  onShare={() => shareCommandToClipboard(s.command, s.category ?? undefined)}
+                  onUseInBuilder={() => onUseInBuilder(s)}
+                  onDelete={() => setConfirm({ kind: 'saved', target: s })}
+                />
+              ))}
+            </section>
+          </>
+        )}
       </div>
 
       {folderModal && (
@@ -419,6 +422,33 @@ export function SavedPage() {
         />
       )}
     </div>
+  );
+}
+
+function SavedLoadingState() {
+  return (
+    <>
+      <aside
+        aria-label="Loading folders"
+        className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 space-y-2"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <SkeletonBar className="w-16" />
+          <Skeleton className="h-5 w-12" />
+        </div>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between gap-3 px-2 py-1">
+            <SkeletonBar className={i === 0 ? 'w-28' : 'w-20'} />
+            <Skeleton className="h-3 w-5" />
+          </div>
+        ))}
+      </aside>
+      <section className="space-y-2" aria-label="Loading saved commands">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonRow key={i} />
+        ))}
+      </section>
+    </>
   );
 }
 

@@ -1,4 +1,5 @@
 import type { Suggestion } from '../types';
+import { Skeleton, SkeletonBar } from './Skeleton';
 
 interface Props {
   items: Suggestion[];
@@ -68,7 +69,22 @@ export function SuggestionList({
   optionIdPrefix
 }: Props) {
   if (loading) {
-    return <div className="text-slate-600 dark:text-slate-400 px-4 py-3">Loading suggestions…</div>;
+    return (
+      <div className="divide-y divide-slate-200 dark:divide-slate-800" aria-label="Loading suggestions">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="px-4 py-2.5">
+            <div className="flex items-start gap-3">
+              <Skeleton className="h-5 w-16 shrink-0" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <SkeletonBar className={i % 2 === 0 ? 'w-10/12' : 'w-8/12'} />
+                <SkeletonBar className={i % 2 === 0 ? 'w-7/12' : 'w-9/12'} />
+              </div>
+              <Skeleton className="h-3 w-8 shrink-0 self-center" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
   if (items.length === 0) {
     return (
