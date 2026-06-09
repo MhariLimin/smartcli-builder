@@ -3,6 +3,8 @@ import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { api } from '../api/client';
 import { classifyDestructiveCommand } from '../lib/destructive';
 import { describeRefusal, encode as encodeShare } from '../lib/shareLink';
+import { useUiPrefs } from '../hooks/useUiPrefs';
+import { InlinePlaceholderEditor } from './InlinePlaceholderEditor';
 import { PlaceholderForm } from './PlaceholderForm';
 import { SaveToFolderModal } from './SaveToFolderModal';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
@@ -128,6 +130,66 @@ async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 type PreviewSeg = { text: string; kind: 'plain' | 'unfilled' | 'filled' };
+type InlineCommandSeg =
+  | { kind: 'plain'; text: string }
+  | {
+      kind: 'slot';
+      text: string;
+      value: string;
+      placeholder: PlaceholderInfo;
+    };
+
+function buildInlineCommandSegments(
+  command: string,
+  placeholders: PlaceholderInfo[],
+  filled: Record<string, { value: string; start: number }>
+): InlineCommandSeg[] {
+  const ranges = placeholders
+    .map((placeholder) => {
+      const entry = filled[placeholder.slot];
+      if (
+        entry?.value &&
+        command.slice(entry.start, entry.start + entry.value.length) === entry.value
+      ) {
+        return {
+          start: entry.start,
+          end: entry.start + entry.value.length,
+          value: entry.value,
+          placeholder
+        };
+      }
+      const start = command.indexOf(placeholder.slot);
+      if (start === -1) return null;
+      return {
+        start,
+        end: start + placeholder.slot.length,
+        value: '',
+        placeholder
+      };
+    })
+    .filter((range): range is NonNullable<typeof range> => range !== null)
+    .sort((a, b) => a.start - b.start);
+
+  const segments: InlineCommandSeg[] = [];
+  let cursor = 0;
+  for (const range of ranges) {
+    if (range.start < cursor) continue;
+    if (range.start > cursor) {
+      segments.push({ kind: 'plain', text: command.slice(cursor, range.start) });
+    }
+    segments.push({
+      kind: 'slot',
+      text: command.slice(range.start, range.end),
+      value: range.value,
+      placeholder: range.placeholder
+    });
+    cursor = range.end;
+  }
+  if (cursor < command.length) {
+    segments.push({ kind: 'plain', text: command.slice(cursor) });
+  }
+  return segments;
+}
 
 // Derive the read-only "Will copy" view from the canonical `command` string
 // (which already holds substituted values) plus the position-tracked `filled`
@@ -198,6 +260,7 @@ export function BuilderView({
   const [activeIndex, setActiveIndex] = useState(-1);
   const [helpOpen, setHelpOpen] = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const { placeholderInputMode, setPlaceholderInputMode } = useUiPrefs();
   // All transient success/error feedback now goes through the shared toast
   // channel instead of five separate inline-flash states + timers.
   const toast = useToast();
@@ -283,6 +346,13 @@ export function BuilderView({
     for (const [slot, entry] of Object.entries(filled)) out[slot] = entry.value;
     return out;
   }, [filled]);
+  const inlineCommandSegments = useMemo(
+    () => buildInlineCommandSegments(command, remainingPlaceholders, filled),
+    [command, remainingPlaceholders, filled]
+  );
+  const inlineModeActive =
+    placeholderInputMode === 'inline' &&
+    inlineCommandSegments.some((segment) => segment.kind === 'slot');
 
   // Drop a filled entry when its tracked range no longer matches its value —
   // covers the "user deleted the substituted text from the input bar" path.
@@ -612,6 +682,48 @@ export function BuilderView({
         </header>
 
         <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+          {remainingPlaceholders.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900 sm:px-4">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                Placeholder input
+              </span>
+              <div
+                className="inline-flex rounded border border-slate-300 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-950"
+                role="radiogroup"
+                aria-label="Placeholder input method"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={placeholderInputMode === 'form'}
+                  onClick={() => setPlaceholderInputMode('form')}
+                  className={`min-h-9 rounded px-3 text-xs font-medium transition motion-reduce:transition-none ${
+                    placeholderInputMode === 'form'
+                      ? 'bg-sky-600 text-white'
+                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  Form below
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={placeholderInputMode === 'inline'}
+                  onClick={() => {
+                    setPlaceholderInputMode('inline');
+                    setShowSuggestions(false);
+                  }}
+                  className={`min-h-9 rounded px-3 text-xs font-medium transition motion-reduce:transition-none ${
+                    placeholderInputMode === 'inline'
+                      ? 'bg-sky-600 text-white'
+                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  Inline tokens
+                </button>
+              </div>
+            </div>
+          )}
           <div className="relative border-b border-slate-200 dark:border-slate-800">
             <input
               ref={inputRef}
@@ -620,8 +732,13 @@ export function BuilderView({
               onChange={(e) => onCommandChange(e.target.value)}
               onKeyDown={onInputKeyDown}
               placeholder="Start typing… e.g. 'kubectl get'"
-              className="w-full min-h-12 bg-white dark:bg-slate-950 px-3 sm:px-4 py-3 pr-14 font-mono text-base text-slate-900 dark:text-slate-100
-                         placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none"
+              className={`relative w-full min-h-12 bg-white dark:bg-slate-950 px-3 sm:px-4 py-3 pr-14 font-mono text-base
+                         placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none
+                         ${
+                           inlineModeActive
+                             ? 'text-transparent caret-slate-900 selection:bg-sky-200 dark:caret-slate-100 dark:selection:bg-sky-800'
+                             : 'text-slate-900 dark:text-slate-100'
+                         }`}
               spellCheck={false}
               autoComplete="off"
               autoFocus
@@ -631,6 +748,35 @@ export function BuilderView({
               aria-activedescendant={activeOptionId}
               aria-autocomplete="list"
             />
+            {inlineModeActive && (
+              <div
+                className="pointer-events-none absolute inset-y-0 left-0 right-14 flex items-center overflow-hidden whitespace-pre px-3
+                           font-mono text-base text-slate-900 dark:text-slate-100 sm:px-4"
+                aria-label="Editable command placeholders"
+              >
+                {inlineCommandSegments.map((segment, index) =>
+                  segment.kind === 'plain' ? (
+                    <span key={`${index}-${segment.text}`} aria-hidden="true">
+                      {segment.text}
+                    </span>
+                  ) : (
+                    <InlinePlaceholderEditor
+                      key={segment.placeholder.slot}
+                      placeholder={segment.placeholder}
+                      displayValue={segment.text}
+                      value={segment.value}
+                      onChange={(value) => onPlaceholderChange(segment.placeholder.slot, value)}
+                      onOpenChange={(open) => {
+                        if (open) {
+                          setShowSuggestions(false);
+                          setActiveIndex(-1);
+                        }
+                      }}
+                    />
+                  )
+                )}
+              </div>
+            )}
             {command && (
               <button
                 type="button"
@@ -670,7 +816,7 @@ export function BuilderView({
             </div>
           )}
 
-          {remainingPlaceholders.length > 0 && (
+          {remainingPlaceholders.length > 0 && placeholderInputMode === 'form' && (
             <div className="border-t border-slate-200 dark:border-slate-800">
               <PlaceholderForm
                 placeholders={remainingPlaceholders}
