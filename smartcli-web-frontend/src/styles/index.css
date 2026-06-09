@@ -2,8 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
-  height: 100%;
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  :root.dark {
+    color-scheme: dark;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    min-height: 100%;
+  }
+
+  html {
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply min-h-screen bg-slate-100 text-slate-900 transition-colors dark:bg-navy-950 dark:text-slate-100;
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(0, 217, 245, 0.08), transparent 30rem),
+      radial-gradient(circle at 88% 8%, rgba(99, 91, 255, 0.07), transparent 28rem);
+    background-attachment: fixed;
+  }
+
+  code, pre, .font-mono {
+    font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  ::selection {
+    @apply bg-cyan-500/25 text-slate-950 dark:text-white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-slate-300 dark:bg-navy-600;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-navy-500;
+  }
+}
+
+@layer components {
+  .page-title {
+    @apply text-xl font-semibold tracking-tight text-slate-950 dark:text-white;
+  }
+
+  .page-description {
+    @apply max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400;
+  }
+
+  .surface-card {
+    @apply rounded-xl border border-slate-200/90 bg-white/90 shadow-sm backdrop-blur
+           dark:border-navy-700 dark:bg-navy-900/90 dark:shadow-inner-highlight;
+  }
+
+  .surface-muted {
+    @apply rounded-lg border border-slate-200 bg-slate-50
+           dark:border-navy-700 dark:bg-navy-850;
+  }
+
+  .focus-brand {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500
+           focus-visible:ring-offset-2 focus-visible:ring-offset-white
+           dark:focus-visible:ring-offset-navy-950;
+  }
 }
 
 /* Toast entrance. Gated on no-preference so it is a no-op when the user asks
@@ -26,4 +105,13 @@ html, body, #root {
 }
 @media (prefers-reduced-motion: no-preference) {
   .copy-pulse { animation: copy-pulse 150ms ease-out; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

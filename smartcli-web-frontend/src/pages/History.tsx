@@ -20,11 +20,14 @@ export function HistoryPage() {
 
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+      <header className="space-y-2">
+        <div className="text-2xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">
+          Activity
+        </div>
+        <h1 className="page-title">
           History
-        </h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        </h1>
+        <p className="page-description">
           Every command you've copied. Filter, click to reuse in the Builder,
           delete a row, or clear everything.
         </p>
@@ -49,7 +52,7 @@ export function HistoryPage() {
 function HistoryLoadingPanel() {
   return (
     <div
-      className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3 h-full flex flex-col"
+      className="surface-card p-4 space-y-3 h-full flex flex-col"
       aria-label="Loading history"
     >
       <div className="flex items-center justify-between">

@@ -199,11 +199,14 @@ export function SavedPage() {
 
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+      <header className="space-y-2">
+        <div className="text-2xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">
+          Personal library
+        </div>
+        <h1 className="page-title">
           Saved Commands
-        </h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        </h1>
+        <p className="page-description">
           Curated library, separate from history. Pick a folder, optionally
           narrow with a tag chip, then copy, edit, or send any row back to
           the Builder.
@@ -218,8 +221,7 @@ export function SavedPage() {
       )}
 
       <div
-        className="rounded-lg border border-slate-200 dark:border-slate-800
-                   bg-slate-50 dark:bg-slate-900 p-3 space-y-2"
+        className="surface-card p-3 space-y-2"
         aria-label="Filters"
       >
         <div className="flex flex-wrap items-center gap-2">
@@ -228,7 +230,7 @@ export function SavedPage() {
             <select
               value={searchField}
               onChange={(e) => setSearchField(e.target.value as SearchField)}
-              className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded
+              className="focus-brand bg-white dark:bg-navy-950 border border-slate-300 dark:border-navy-700 rounded-lg
                          px-2 py-1 text-xs text-slate-900 dark:text-slate-100 normal-case tracking-normal
                          focus:outline-none focus:border-sky-500"
             >
@@ -252,7 +254,7 @@ export function SavedPage() {
                   ? 'Search by tag…'
                   : 'Search label, command, or tag…'
               }
-              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded
+              className="focus-brand w-full bg-white dark:bg-navy-950 border border-slate-300 dark:border-navy-700 rounded-lg
                          px-3 py-1.5 font-mono text-sm text-slate-900 dark:text-slate-100
                          placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-600"
               spellCheck={false}
@@ -313,8 +315,7 @@ export function SavedPage() {
           <>
             <aside
               aria-label="Folder tree"
-              className="rounded-lg border border-slate-200 dark:border-slate-800
-                         bg-slate-50 dark:bg-slate-900 p-3 space-y-1"
+              className="surface-card p-3 space-y-1"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] uppercase tracking-wide font-semibold text-slate-600 dark:text-slate-400">
@@ -430,7 +431,7 @@ function SavedLoadingState() {
     <>
       <aside
         aria-label="Loading folders"
-        className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 space-y-2"
+        className="surface-card p-3 space-y-2"
       >
         <div className="flex items-center justify-between mb-2">
           <SkeletonBar className="w-16" />
@@ -587,7 +588,7 @@ function SavedRow({
   };
 
   return (
-    <article className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 space-y-2">
+    <article className="surface-card p-3 space-y-2 transition hover:border-slate-300 dark:hover:border-navy-600">
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0 space-y-1">
           <input

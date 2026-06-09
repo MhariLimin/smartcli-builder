@@ -1,34 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useTheme, type ThemeMode } from '../theme/ThemeContext';
 
 interface Props {
   waking: boolean;
+  onOpenNavigation: () => void;
+  onOpenPalette: () => void;
 }
 
 const THEME_OPTIONS: { mode: ThemeMode; label: string; hint: string }[] = [
-  { mode: 'light', label: 'Light', hint: 'Bright UI' },
-  { mode: 'dark', label: 'Dark', hint: 'True-black surfaces' }
+  { mode: 'light', label: 'Light', hint: 'Paper surfaces' },
+  { mode: 'dark', label: 'Dark', hint: 'Terminal navy' }
 ];
 
-export function Header({ waking }: Props) {
+export function Header({ waking, onOpenNavigation, onOpenPalette }: Props) {
   const { mode, setMode } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
-  // Close on outside click / Escape so the dropdown behaves like every other
-  // menu the user has used. Listeners only attach while it's open.
   useEffect(() => {
     if (!menuOpen) return;
-    const onClick = (e: MouseEvent) => {
-      const target = e.target as Node | null;
-      if (!target) return;
-      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (!target || menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
       setMenuOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
         setMenuOpen(false);
         buttonRef.current?.focus();
       }
@@ -41,153 +41,139 @@ export function Header({ waking }: Props) {
     };
   }, [menuOpen]);
 
-  const onMenuKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
-    // Tab out should close the menu so focus order is sensible.
-    if (e.key === 'Tab') setMenuOpen(false);
+  const onMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Tab') setMenuOpen(false);
   };
 
   return (
-    <header
-      className="sticky top-0 z-40 backdrop-blur
-                 bg-slate-100 dark:bg-slate-900
-                 border-b-2 border-sky-500/60
-                 shadow-md shadow-slate-300/40 dark:shadow-black/40"
-    >
-      <div className="max-w-[1400px] mx-auto px-3 sm:px-6 py-2 sm:py-4 flex items-center gap-3 sm:gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <img
-            src="/Header_logo.png"
-            alt="smartcli-web logo"
-            className="h-14 sm:h-20 w-auto select-none"
-            draggable={false}
-          />
-          <div className="hidden sm:flex flex-col leading-tight min-w-0">
-            <span className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
-              smartcli-web
-            </span>
-            <span className="text-xs text-slate-600 dark:text-slate-400 truncate">
-              Compose CLI commands
-            </span>
-          </div>
-        </div>
+    <header className="sticky top-0 z-40 h-14 border-b border-navy-800 bg-navy-950/95 text-slate-100 shadow-lg shadow-navy-950/20 backdrop-blur">
+      <div className="flex h-full items-center gap-2 px-3 sm:px-4">
+        <button
+          type="button"
+          onClick={onOpenNavigation}
+          className="focus-brand inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 transition hover:bg-navy-800 hover:text-white lg:hidden"
+          aria-label="Open navigation"
+        >
+          <MenuIcon />
+        </button>
 
-        {/* Primary navigation moved to the left Sidebar component as part of
-            Tier-3 #13. The header now only carries product chrome (logo,
-            warm-wake pill, account dropdown). */}
-        <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
+        <Link to="/" className="focus-brand flex shrink-0 items-center gap-2 rounded-lg">
+          <img src="/Header_logo.png" alt="SmartCLI" className="h-8 w-auto select-none" draggable={false} />
+          <span className="hidden text-sm font-semibold tracking-tight text-white sm:inline">SmartCLI</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={onOpenPalette}
+          className="focus-brand mx-auto hidden w-full max-w-md items-center gap-2 rounded-lg border border-navy-700 bg-navy-850 px-3 py-2 text-left text-xs text-slate-400 transition hover:border-navy-600 hover:text-slate-200 md:flex"
+          aria-label="Open command palette"
+        >
+          <SearchIcon />
+          <span className="flex-1">Search commands, templates, and pages</span>
+          <kbd className="rounded border border-navy-600 bg-navy-800 px-1.5 py-0.5 font-mono text-2xs text-slate-400">
+            Ctrl K
+          </kbd>
+        </button>
+
+        <div className="ml-auto flex items-center gap-2 md:ml-0">
           {waking && (
             <span
-              className="min-h-11 inline-flex items-center text-xs px-2 py-1 rounded border
-                         border-amber-300 dark:border-amber-700
-                         bg-amber-100 dark:bg-amber-900/40
-                         text-amber-800 dark:text-amber-200 animate-pulse"
+              className="hidden items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-2xs font-medium text-amber-300 sm:inline-flex"
               role="status"
               aria-live="polite"
             >
-              waking backend…
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 motion-safe:animate-pulse" />
+              Waking backend
             </span>
           )}
 
-        <div className="relative">
           <button
-            ref={buttonRef}
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            aria-label="Account menu"
-            className="flex min-h-11 items-center gap-2 rounded-full pl-1 pr-2 sm:pr-3 py-1
-                       bg-white dark:bg-slate-800
-                       border border-slate-200 dark:border-slate-700
-                       hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm"
+            type="button"
+            onClick={onOpenPalette}
+            className="focus-brand inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 transition hover:bg-navy-800 hover:text-white md:hidden"
+            aria-label="Open command palette"
           >
-            <span
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full
-                         bg-slate-200 dark:bg-slate-800
-                         text-slate-700 dark:text-slate-200
-                         text-xs font-semibold"
-              aria-hidden="true"
-            >
-              G
-            </span>
-            <span className="text-xs text-slate-600 dark:text-slate-400 hidden sm:inline">
-              Guest
-            </span>
-            <span className="text-[10px] text-slate-500" aria-hidden="true">
-              ▾
-            </span>
+            <SearchIcon />
           </button>
 
-          {menuOpen && (
-            <div
-              ref={menuRef}
-              role="menu"
-              onKeyDown={onMenuKeyDown}
-              className="absolute right-0 mt-2 w-60 rounded-lg shadow-lg
-                         bg-white dark:bg-slate-900
-                         border border-slate-200 dark:border-slate-800
-                         py-1 text-sm"
+          <div className="relative">
+            <button
+              ref={buttonRef}
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              aria-label="Guest preferences"
+              className="focus-brand flex min-h-10 items-center gap-2 rounded-lg border border-navy-700 bg-navy-850 p-1 pr-2 text-slate-200 transition hover:border-navy-600 hover:bg-navy-800"
             >
-              <div className="px-3 py-2 text-[10px] uppercase tracking-wide text-slate-500">
-                Theme
-              </div>
-              <div role="group" className="px-1 pb-1">
-                {THEME_OPTIONS.map((opt) => {
-                  const active = mode === opt.mode;
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-cyan-500 to-violet-500 text-xs font-bold text-white">
+                G
+              </span>
+              <span className="hidden text-xs sm:inline">Guest</span>
+              <ChevronDownIcon />
+            </button>
+
+            {menuOpen && (
+              <div
+                ref={menuRef}
+                role="menu"
+                onKeyDown={onMenuKeyDown}
+                className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 text-sm text-slate-800 shadow-2xl dark:border-navy-700 dark:bg-navy-900 dark:text-slate-200"
+              >
+                <div className="px-3 pb-1 pt-2 text-2xs font-semibold uppercase tracking-widest text-slate-500">
+                  Appearance
+                </div>
+                {THEME_OPTIONS.map((option) => {
+                  const active = mode === option.mode;
                   return (
                     <button
-                      key={opt.mode}
+                      key={option.mode}
                       role="menuitemradio"
                       aria-checked={active}
-                      onClick={() => setMode(opt.mode)}
-                      className={
-                        'flex min-h-11 w-full items-center justify-between gap-2 px-3 py-1.5 rounded transition ' +
-                        (active
-                          ? 'bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-100'
-                          : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800')
-                      }
+                      onClick={() => setMode(option.mode)}
+                      className={`focus-brand flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition ${
+                        active
+                          ? 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400'
+                          : 'hover:bg-slate-100 dark:hover:bg-navy-800'
+                      }`}
                     >
-                      <span className="flex items-center gap-2">
-                        <span aria-hidden="true" className="w-4 text-center">
-                          {active ? '●' : '○'}
-                        </span>
-                        {opt.label}
+                      {option.mode === 'light' ? <SunIcon /> : <MoonIcon />}
+                      <span className="flex-1">
+                        <span className="block text-sm font-medium">{option.label}</span>
+                        <span className="block text-2xs text-slate-500">{option.hint}</span>
                       </span>
-                      <span className="text-[10px] text-slate-500">{opt.hint}</span>
+                      {active && <span className="h-2 w-2 rounded-full bg-cyan-500" aria-hidden="true" />}
                     </button>
                   );
                 })}
+                <div className="mx-2 my-1 border-t border-slate-200 dark:border-navy-700" />
+                <p className="px-3 py-2 text-xs leading-5 text-slate-500">
+                  Account and workspace controls will appear after authentication ships.
+                </p>
               </div>
-              <div className="border-t border-slate-200 dark:border-slate-800 my-1" />
-              <MenuItem onClick={() => setMenuOpen(false)}>Profile</MenuItem>
-              <MenuItem onClick={() => setMenuOpen(false)}>Settings</MenuItem>
-              <MenuItem onClick={() => setMenuOpen(false)}>Log out</MenuItem>
-              <div className="px-3 py-2 text-[10px] text-slate-500 italic">
-                Sign-in arrives with auth — these are stubs for now.
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
   );
 }
 
-function MenuItem({
-  onClick,
-  children
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      role="menuitem"
-      onClick={onClick}
-      className="block min-h-11 w-full text-left px-3 py-1.5 text-slate-700 dark:text-slate-200
-                 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-    >
-      {children}
-    </button>
-  );
+function MenuIcon() {
+  return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 7h16M4 12h16M4 17h16" /></svg>;
+}
+
+function SearchIcon() {
+  return <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>;
+}
+
+function ChevronDownIcon() {
+  return <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2"><path d="m7 10 5 5 5-5" /></svg>;
+}
+
+function SunIcon() {
+  return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3.5" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>;
+}
+
+function MoonIcon() {
+  return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 15.2A8 8 0 0 1 8.8 4 8 8 0 1 0 20 15.2Z" /></svg>;
 }

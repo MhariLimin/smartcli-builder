@@ -81,8 +81,7 @@ export function BuilderPage() {
       {recent.length > 0 && (
         <section
           aria-labelledby="recent-strip-heading"
-          className="rounded-lg border border-slate-200 dark:border-slate-800
-                     bg-slate-50 dark:bg-slate-900 p-3 space-y-2"
+          className="surface-card p-3 space-y-2"
         >
           <div className="flex items-center justify-between">
             <h3
@@ -94,8 +93,8 @@ export function BuilderPage() {
             </h3>
             <button
               onClick={() => navigate('/history')}
-              className="text-xs text-sky-700 dark:text-sky-300
-                         hover:text-sky-600 dark:hover:text-sky-200"
+              className="focus-brand rounded px-1 text-xs text-electric-600 transition
+                         hover:text-electric-500 dark:text-cyan-400 dark:hover:text-cyan-300"
             >
               full history →
             </button>
@@ -110,9 +109,10 @@ export function BuilderPage() {
                              rounded border border-slate-200 dark:border-slate-700
                              bg-white dark:bg-slate-800
                              text-slate-800 dark:text-slate-200
-                             hover:border-sky-400 dark:hover:border-sky-600
-                             hover:bg-sky-50 dark:hover:bg-sky-900/30
-                             px-2 py-1 transition"
+                             hover:border-cyan-500 hover:bg-cyan-50
+                             dark:border-navy-700 dark:bg-navy-850
+                             dark:hover:border-cyan-500/60 dark:hover:bg-cyan-500/10
+                             px-2 py-1.5 transition"
                 >
                   <span className="text-[9px] uppercase tracking-wide text-slate-500 mr-2">
                     {h.category}

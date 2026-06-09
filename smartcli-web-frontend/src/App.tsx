@@ -15,6 +15,8 @@ import { api } from './api/client';
 export default function App() {
   const [waking, setWaking] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const warmWakeFired = useRef(false);
 
   // Warm-wake: on mount, fire a no-op request so the (possibly sleeping)
@@ -47,19 +49,50 @@ export default function App() {
   return (
     <ToastProvider>
       <BrowserRouter>
-        <div className="min-h-full">
-          <Header waking={waking} />
-          <div className="flex">
-            <Sidebar />
-            <main className="flex-1 min-w-0 px-3 sm:px-6 py-4 sm:py-6 space-y-6">
-              <Routes>
-                <Route path="/" element={<BuilderPage />} />
-                <Route path="/saved" element={<SavedPage />} />
-                <Route path="/history" element={<HistoryPage />} />
-                <Route path="/catalog" element={<CatalogPage />} />
-                {/* /c/:payload decodes a share link and redirects to /. */}
-                <Route path="/c/:payload" element={<ShareRedirect />} />
-              </Routes>
+        <div className="flex min-h-screen flex-col">
+          <Header
+            waking={waking}
+            onOpenNavigation={() => setMobileNavOpen(true)}
+            onOpenPalette={() => setPaletteOpen(true)}
+          />
+          <div className="flex min-h-0 flex-1">
+            <div className="hidden lg:block">
+              <Sidebar
+                collapsed={sidebarCollapsed}
+                onToggle={() => setSidebarCollapsed((value) => !value)}
+              />
+            </div>
+
+            {mobileNavOpen && (
+              <div className="fixed inset-0 z-50 lg:hidden">
+                <button
+                  type="button"
+                  className="absolute inset-0 bg-navy-950/75 backdrop-blur-sm"
+                  aria-label="Close navigation"
+                  onClick={() => setMobileNavOpen(false)}
+                />
+                <div className="relative h-full w-64 max-w-[85vw] shadow-2xl">
+                  <Sidebar
+                    collapsed={false}
+                    onToggle={() => {}}
+                    onClose={() => setMobileNavOpen(false)}
+                    mobile
+                  />
+                </div>
+              </div>
+            )}
+
+            <main id="main-content" className="min-w-0 flex-1 overflow-x-hidden">
+              <div className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-7 lg:px-8">
+                <Routes>
+                  <Route path="/" element={<BuilderPage />} />
+                  <Route path="/saved" element={<SavedPage />} />
+                  <Route path="/history" element={<HistoryPage />} />
+                  <Route path="/catalog" element={<CatalogPage />} />
+                  {/* /c/:payload decodes a share link and redirects to /. */}
+                  <Route path="/c/:payload" element={<ShareRedirect />} />
+                </Routes>
+              </div>
             </main>
           </div>
           <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

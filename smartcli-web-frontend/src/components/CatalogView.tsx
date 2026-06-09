@@ -239,9 +239,12 @@ export function CatalogView({ onUseTemplate }: Props) {
       ) : null;
     return (
       <div className="space-y-4">
-        <header className="space-y-1">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Catalog · search</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+        <header className="space-y-2">
+          <div className="text-2xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">
+            Template library
+          </div>
+          <h1 className="page-title">Catalog search</h1>
+          <p className="page-description">
             Free-text match across template text and description, narrow with category chips.
           </p>
         </header>
@@ -272,8 +275,7 @@ export function CatalogView({ onUseTemplate }: Props) {
             {filteredResults.map((t, idx) => (
               <li
                 key={`${t.category}-${idx}`}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-3
-                           hover:border-slate-400 dark:hover:border-slate-700 transition-colors"
+                className="surface-card p-3 hover:border-slate-400 dark:hover:border-navy-600 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -364,7 +366,7 @@ export function CatalogView({ onUseTemplate }: Props) {
 
         {searchBar}
 
-        <div className="flex items-baseline justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <div className="flex items-baseline justify-between gap-3 border-b border-slate-200 dark:border-navy-700 pb-3">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               {categoryLabel(selected)}
@@ -396,8 +398,7 @@ export function CatalogView({ onUseTemplate }: Props) {
             {selectedTemplates.map((t, idx) => (
               <li
                 key={`${selected}-${idx}`}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-3
-                           hover:border-slate-400 dark:hover:border-slate-700 transition-colors"
+                className="surface-card p-3 hover:border-slate-400 dark:hover:border-navy-600 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
                   <code className="block font-mono text-sm text-slate-900 dark:text-slate-100 break-all">
@@ -462,9 +463,12 @@ export function CatalogView({ onUseTemplate }: Props) {
   // Index — category grid.
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Catalog</h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+      <header className="space-y-2">
+        <div className="text-2xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">
+          Template library
+        </div>
+        <h1 className="page-title">Catalog</h1>
+        <p className="page-description">
           Pick a category to see every command and placeholder combination this app can generate
           for it. Each card also links to the upstream documentation. Or search across all
           categories at once.
@@ -498,8 +502,9 @@ export function CatalogView({ onUseTemplate }: Props) {
             return (
               <div
                 key={cat}
-                className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg
-                           hover:border-slate-400 dark:hover:border-slate-700 transition-colors"
+                className="surface-card relative overflow-hidden
+                           hover:-translate-y-0.5 hover:border-cyan-500/50 hover:shadow-glow-cyan
+                           transition motion-reduce:transform-none"
               >
                 <button
                   onClick={() => setSelected(cat)}

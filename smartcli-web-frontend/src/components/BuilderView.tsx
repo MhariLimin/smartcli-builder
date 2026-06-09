@@ -664,9 +664,12 @@ export function BuilderView({
 
   return (
     <div className="space-y-5 sm:space-y-6 min-w-0">
-        <header className="space-y-1">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Build a command</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+        <header className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-2xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">
+            Command workspace
+          </div>
+          <h1 className="page-title">Build a command</h1>
+          <p className="page-description">
             Type the command directly or pick from suggestions; placeholder slots
             become inputs that substitute in place. <span className="text-slate-800 dark:text-slate-200">Copy</span>{' '}
             also saves to history. Press{' '}
@@ -681,14 +684,14 @@ export function BuilderView({
           </p>
         </header>
 
-        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+        <div className="surface-card overflow-hidden shadow-lg shadow-slate-200/30 dark:shadow-navy-950/30">
           {remainingPlaceholders.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900 sm:px-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/80 px-3 py-2 dark:border-navy-700 dark:bg-navy-850 sm:px-4">
               <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
                 Placeholder input
               </span>
               <div
-                className="inline-flex rounded border border-slate-300 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-950"
+                className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5 dark:border-navy-700 dark:bg-navy-950"
                 role="radiogroup"
                 aria-label="Placeholder input method"
               >
@@ -699,8 +702,8 @@ export function BuilderView({
                   onClick={() => setPlaceholderInputMode('form')}
                   className={`min-h-9 rounded px-3 text-xs font-medium transition motion-reduce:transition-none ${
                     placeholderInputMode === 'form'
-                      ? 'bg-sky-600 text-white'
-                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                      ? 'bg-electric-500 text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-navy-800'
                   }`}
                 >
                   Form below
@@ -715,8 +718,8 @@ export function BuilderView({
                   }}
                   className={`min-h-9 rounded px-3 text-xs font-medium transition motion-reduce:transition-none ${
                     placeholderInputMode === 'inline'
-                      ? 'bg-sky-600 text-white'
-                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                      ? 'bg-electric-500 text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-navy-800'
                   }`}
                 >
                   Inline tokens
@@ -724,7 +727,7 @@ export function BuilderView({
               </div>
             </div>
           )}
-          <div className="relative border-b border-slate-200 dark:border-slate-800">
+          <div className="relative border-b border-slate-200 dark:border-navy-700">
             <input
               ref={inputRef}
               type="text"
@@ -732,7 +735,7 @@ export function BuilderView({
               onChange={(e) => onCommandChange(e.target.value)}
               onKeyDown={onInputKeyDown}
               placeholder="Start typing… e.g. 'kubectl get'"
-              className={`relative w-full min-h-12 bg-white dark:bg-slate-950 px-3 sm:px-4 py-3 pr-14 font-mono text-base
+              className={`relative w-full min-h-14 bg-white dark:bg-navy-950 px-3 sm:px-4 py-3 pr-14 font-mono text-base
                          placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none
                          ${
                            inlineModeActive
@@ -785,7 +788,7 @@ export function BuilderView({
                 aria-label="Clear input"
                 className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center
                            h-11 w-11 rounded text-slate-500 dark:text-slate-400
-                           hover:bg-slate-100 dark:hover:bg-slate-800
+                           hover:bg-slate-100 dark:hover:bg-navy-800
                            hover:text-slate-900 dark:hover:text-slate-100 transition"
               >
                 ✕
@@ -805,7 +808,7 @@ export function BuilderView({
             />
           )}
           {!showSuggestions && (
-            <div className="px-4 py-2 text-xs text-slate-500">
+            <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500 dark:border-navy-800">
               Suggestions hidden —{' '}
               <button
                 onClick={() => setShowSuggestions(true)}
@@ -817,7 +820,7 @@ export function BuilderView({
           )}
 
           {remainingPlaceholders.length > 0 && placeholderInputMode === 'form' && (
-            <div className="border-t border-slate-200 dark:border-slate-800">
+            <div className="border-t border-slate-200 dark:border-navy-700">
               <PlaceholderForm
                 placeholders={remainingPlaceholders}
                 values={placeholderValues}
@@ -840,7 +843,7 @@ export function BuilderView({
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 px-3 sm:px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-950/40">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 px-3 sm:px-4 py-3 border-t border-slate-200 dark:border-navy-700 bg-slate-50/80 dark:bg-navy-850">
             <button
               onClick={onCopy}
               disabled={!trimmedCommand}
@@ -850,7 +853,7 @@ export function BuilderView({
                          ${
                            copied
                              ? 'bg-emerald-600 hover:bg-emerald-500 copy-pulse'
-                             : 'bg-sky-600 hover:bg-sky-500'
+                             : 'bg-electric-500 hover:bg-electric-400 shadow-glow-blue'
                          }`}
             >
               {copied ? (
@@ -865,9 +868,9 @@ export function BuilderView({
               disabled={!trimmedCommand}
               className="min-h-11 w-full sm:w-auto px-3 py-2 rounded text-sm font-medium border
                          border-slate-300 dark:border-slate-700
-                         bg-white dark:bg-slate-800
+                         bg-white dark:bg-navy-800
                          text-slate-800 dark:text-slate-200
-                         hover:bg-slate-100 dark:hover:bg-slate-700
+                         hover:bg-slate-100 dark:hover:bg-navy-700
                          disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400
                          transition"
             >
@@ -879,9 +882,9 @@ export function BuilderView({
               title="Copy a share link to the clipboard"
               className="min-h-11 w-full sm:w-auto px-3 py-2 rounded text-sm font-medium border
                          border-slate-300 dark:border-slate-700
-                         bg-white dark:bg-slate-800
+                         bg-white dark:bg-navy-800
                          text-slate-800 dark:text-slate-200
-                         hover:bg-slate-100 dark:hover:bg-slate-700
+                         hover:bg-slate-100 dark:hover:bg-navy-700
                          disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400
                          transition"
             >
@@ -900,7 +903,7 @@ export function BuilderView({
           </div>
 
           {showPreview && (
-            <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/30">
+            <div className="px-4 py-3 border-t border-slate-200 dark:border-navy-700 bg-slate-50/70 dark:bg-navy-950/60">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
                 Will copy
               </div>
