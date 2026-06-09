@@ -1,0 +1,201 @@
+import type { ReactNode } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import {
+  Wrench, BookMarked, History, Library,
+  Cpu, Network, Terminal, Users, Settings,
+  Lock, ChevronRight, ChevronLeft,
+  LogOut, LogIn,
+} from 'lucide-react';
+import { cn } from '../../lib/boltUtils';
+import { useAuth } from '../../context/AppContext';
+import { RoleBadge } from '../ui/Badge';
+
+interface NavItem {
+  label: string;
+  to: string;
+  icon: ReactNode;
+  pro?: boolean;
+  group: 'core' | 'pro' | 'workspace';
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Builder', to: '/', icon: <Wrench className="w-4 h-4" />, group: 'core' },
+  { label: 'Saved', to: '/saved', icon: <BookMarked className="w-4 h-4" />, group: 'core' },
+  { label: 'History', to: '/history', icon: <History className="w-4 h-4" />, group: 'core' },
+  { label: 'Catalog', to: '/catalog', icon: <Library className="w-4 h-4" />, group: 'core' },
+  { label: 'AI Generate', to: '/ai', icon: <Cpu className="w-4 h-4" />, pro: true, group: 'pro' },
+  { label: 'Kubernetes', to: '/kubernetes', icon: <Network className="w-4 h-4" />, pro: true, group: 'pro' },
+  { label: 'SSH Workflows', to: '/ssh', icon: <Terminal className="w-4 h-4" />, pro: true, group: 'pro' },
+  { label: 'Members', to: '/workspace/members', icon: <Users className="w-4 h-4" />, group: 'workspace' },
+  { label: 'Settings', to: '/workspace/settings', icon: <Settings className="w-4 h-4" />, group: 'workspace' },
+];
+
+interface SidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+  onClose?: () => void;
+}
+
+export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
+  const { authState, isPro, signOut, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const user = authState.type === 'authenticated' ? authState.user : null;
+  const role = authState.type === 'authenticated' ? authState.role : null;
+
+  const coreItems = NAV_ITEMS.filter((n) => n.group === 'core');
+  const proItems = NAV_ITEMS.filter((n) => n.group === 'pro');
+  const workspaceItems = NAV_ITEMS.filter((n) => n.group === 'workspace');
+
+  return (
+    <nav
+      aria-label="Main navigation"
+      className={cn(
+        'flex flex-col h-full bg-navy-900 border-r border-navy-800 transition-all duration-200 overflow-hidden',
+        collapsed ? 'w-14' : 'w-56'
+      )}
+    >
+      {/* Toggle */}
+      <button
+        onClick={onToggle}
+        className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-navy-800 transition-colors mx-3 mt-3 mb-1 self-end"
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+      </button>
+
+      {/* Nav groups */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2 space-y-4">
+        <NavGroup label="Core" collapsed={collapsed}>
+          {coreItems.map((item) => (
+            <SidebarItem key={item.to} item={item} collapsed={collapsed} onClose={onClose} />
+          ))}
+        </NavGroup>
+
+        <NavGroup label="Pro" collapsed={collapsed}>
+          {proItems.map((item) => (
+            <SidebarItem
+              key={item.to}
+              item={item}
+              collapsed={collapsed}
+              locked={!isPro}
+              onClose={onClose}
+            />
+          ))}
+        </NavGroup>
+
+        {isAuthenticated && (
+          <NavGroup label="Workspace" collapsed={collapsed}>
+            {workspaceItems.map((item) => (
+              <SidebarItem key={item.to} item={item} collapsed={collapsed} onClose={onClose} />
+            ))}
+          </NavGroup>
+        )}
+      </div>
+
+      {/* User area */}
+      <div className="border-t border-navy-800 p-2">
+        {isAuthenticated && user ? (
+          <div className={cn('flex items-center gap-2 px-2 py-2 rounded-lg', !collapsed && 'w-full')}>
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.displayName} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-white">
+                  {user.displayName.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-slate-200 truncate">{user.displayName}</p>
+                {role && <div className="mt-0.5"><RoleBadge role={role} /></div>}
+              </div>
+            )}
+            {!collapsed && (
+              <button
+                onClick={() => { signOut(); navigate('/'); }}
+                className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded"
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => { navigate('/login'); onClose?.(); }}
+            className={cn(
+              'flex items-center gap-2 px-2 py-2 rounded-lg w-full',
+              'text-slate-400 hover:text-slate-200 hover:bg-navy-800 transition-colors text-sm'
+            )}
+          >
+            <LogIn className="w-4 h-4 flex-shrink-0" />
+            {!collapsed && <span>Sign in</span>}
+          </button>
+        )}
+      </div>
+    </nav>
+  );
+}
+
+function NavGroup({
+  label,
+  collapsed,
+  children,
+}: {
+  label: string;
+  collapsed: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      {!collapsed && (
+        <p className="px-2 mb-1 text-2xs font-semibold uppercase tracking-widest text-slate-600">
+          {label}
+        </p>
+      )}
+      <div className="space-y-0.5">{children}</div>
+    </div>
+  );
+}
+
+function SidebarItem({
+  item,
+  collapsed,
+  locked,
+  onClose,
+}: {
+  item: NavItem;
+  collapsed: boolean;
+  locked?: boolean;
+  onClose?: () => void;
+}) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.to === '/'}
+      onClick={onClose}
+      title={collapsed ? item.label : undefined}
+      className={({ isActive }) =>
+        cn(
+          'flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors duration-100',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500',
+          isActive
+            ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-navy-800',
+          locked && 'opacity-60'
+        )
+      }
+    >
+      <span className="flex-shrink-0 w-4 h-4">{item.icon}</span>
+      {!collapsed && (
+        <>
+          <span className="flex-1 truncate">{item.label}</span>
+          {locked && <Lock className="w-3 h-3 text-violet-400 flex-shrink-0" />}
+        </>
+      )}
+    </NavLink>
+  );
+}
