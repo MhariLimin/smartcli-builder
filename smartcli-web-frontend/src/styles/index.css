@@ -28,6 +28,32 @@
     @apply bg-slate-50 text-slate-900;
   }
 
+  .light .bg-navy-950,
+  .light .bg-navy-900,
+  .light .bg-navy-850 {
+    background-color: #ffffff !important;
+  }
+
+  .light .bg-navy-800 {
+    background-color: #f1f5f9 !important;
+  }
+
+  .light .border-navy-800,
+  .light .border-navy-700,
+  .light .border-navy-600 {
+    border-color: #cbd5e1 !important;
+  }
+
+  .light .text-slate-100,
+  .light .text-slate-200,
+  .light .text-slate-300 {
+    color: #1e293b !important;
+  }
+
+  .light .text-slate-400 {
+    color: #475569 !important;
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

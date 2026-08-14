@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { UserPlus, MoreHorizontal, Mail, Copy, Trash2, Shield, Clock } from 'lucide-react';
 import { cn, formatRelativeTime } from '../lib/boltUtils';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -10,9 +10,9 @@ import { Modal } from '../components/ui/Modal';
 import { TextInput, Select } from '../components/ui/Input';
 import { GuestGate } from '../components/ui/Gates';
 import { useAuth, useToast } from '../context/AppContext';
-import { MEMBERS, PENDING_INVITES } from '../mock/data';
 import type { Role, WorkspaceMember } from '../mock-types';
 import { copyToClipboard } from '../lib/boltUtils';
+import { workspaceDirectory, type WorkspaceInvite } from '../services/workspaceDirectory';
 
 const ROLES: Role[] = ['admin', 'member', 'viewer'];
 
@@ -23,13 +23,20 @@ export default function WorkspaceMembers() {
   const currentUserId = authState.type === 'authenticated' ? authState.user.id : '';
   const isOwnerOrAdmin = authState.type === 'authenticated' && (authState.role === 'owner' || authState.role === 'admin');
 
-  const [members, setMembers] = useState(MEMBERS);
-  const [invites] = useState(PENDING_INVITES);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [invites, setInvites] = useState<WorkspaceInvite[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('member');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteResult, setInviteResult] = useState<string | null>(null);
+
+  useEffect(() => {
+    workspaceDirectory.load().then((snapshot) => {
+      setMembers(snapshot.members);
+      setInvites(snapshot.invites);
+    });
+  }, []);
 
   if (!isAuthenticated) {
     return (
@@ -43,9 +50,8 @@ export default function WorkspaceMembers() {
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
     setInviteLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const link = `https://smartcli.dev/invite/${Math.random().toString(36).slice(2, 10)}`;
-    setInviteResult(link);
+    const result = await workspaceDirectory.invite(inviteEmail, inviteRole);
+    setInviteResult(result.inviteUrl);
     setInviteLoading(false);
   };
 

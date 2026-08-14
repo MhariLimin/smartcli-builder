@@ -36,7 +36,9 @@ function toastReducer(state: ToastState, action: ToastAction): ToastState {
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
-export type Theme = 'dark' | 'light';
+export type ThemeMode = 'dark' | 'light' | 'system';
+export type ResolvedTheme = 'dark' | 'light';
+export type Presence = 'active' | 'idle' | 'dnd' | 'offline';
 
 // ─── Auth Context ─────────────────────────────────────────────────────────────
 
@@ -52,6 +54,8 @@ interface AuthContextValue {
   isPro: boolean;
   isAuthenticated: boolean;
   canEdit: boolean;
+  presence: Presence;
+  setPresence: (presence: Presence) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -69,8 +73,9 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 // ─── Theme Context ────────────────────────────────────────────────────────────
 
 interface ThemeContextValue {
-  theme: Theme;
-  toggleTheme: () => void;
+  mode: ThemeMode;
+  resolvedTheme: ResolvedTheme;
+  setMode: (mode: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -92,21 +97,30 @@ let toastCounter = 0;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   // Theme
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem('theme');
-    if (stored === 'light' || stored === 'dark') return stored;
-    return 'dark';
+  const [mode, setMode] = useState<ThemeMode>(() => {
+    const stored = localStorage.getItem('smartcli-web.theme');
+    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+    return 'system';
   });
+  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() =>
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  );
+  const resolvedTheme = mode === 'system' ? systemTheme : mode;
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    document.documentElement.classList.toggle('light', theme === 'light');
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const sync = (event: MediaQueryListEvent | MediaQueryList) => setSystemTheme(event.matches ? 'dark' : 'light');
+    sync(media);
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
+    document.documentElement.classList.toggle('light', resolvedTheme === 'light');
+    document.documentElement.style.colorScheme = resolvedTheme;
+    localStorage.setItem('smartcli-web.theme', mode);
+  }, [mode, resolvedTheme]);
 
   // Auth / Scenario
   const [scenarioId, setScenarioId] = useState<ScenarioId>(() => {
@@ -115,6 +129,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [presence, setPresence] = useState<Presence>('active');
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
   const authState = scenario.authState;
@@ -197,7 +212,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [togglePalette]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ mode, resolvedTheme, setMode }}>
       <AuthContext.Provider
         value={{
           authState,
@@ -211,6 +226,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           isPro,
           isAuthenticated,
           canEdit,
+          presence,
+          setPresence,
         }}
       >
         <ToastContext.Provider value={{ toasts, showToast, dismissToast }}>

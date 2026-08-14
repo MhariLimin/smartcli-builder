@@ -2,9 +2,8 @@ import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Wrench, BookMarked, History, Library,
-  Cpu, Network, Terminal, Users, Settings,
-  Lock, ChevronRight, ChevronLeft,
-  LogOut, LogIn,
+  Cpu, Network, Terminal, Sparkles,
+  Lock, LogOut, LogIn,
 } from 'lucide-react';
 import { cn } from '../../lib/boltUtils';
 import { useAuth } from '../../context/AppContext';
@@ -15,7 +14,7 @@ interface NavItem {
   to: string;
   icon: ReactNode;
   pro?: boolean;
-  group: 'core' | 'pro' | 'workspace';
+  group: 'core' | 'pro';
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -26,8 +25,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'AI Generate', to: '/ai', icon: <Cpu className="w-4 h-4" />, pro: true, group: 'pro' },
   { label: 'Kubernetes', to: '/kubernetes', icon: <Network className="w-4 h-4" />, pro: true, group: 'pro' },
   { label: 'SSH Workflows', to: '/ssh', icon: <Terminal className="w-4 h-4" />, pro: true, group: 'pro' },
-  { label: 'Members', to: '/workspace/members', icon: <Users className="w-4 h-4" />, group: 'workspace' },
-  { label: 'Settings', to: '/workspace/settings', icon: <Settings className="w-4 h-4" />, group: 'workspace' },
 ];
 
 interface SidebarProps {
@@ -45,7 +42,6 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
 
   const coreItems = NAV_ITEMS.filter((n) => n.group === 'core');
   const proItems = NAV_ITEMS.filter((n) => n.group === 'pro');
-  const workspaceItems = NAV_ITEMS.filter((n) => n.group === 'workspace');
 
   return (
     <nav
@@ -55,13 +51,22 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
         collapsed ? 'w-14' : 'w-56'
       )}
     >
-      {/* Toggle */}
+      {/* Brand and collapse control */}
       <button
         onClick={onToggle}
-        className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-navy-800 transition-colors mx-3 mt-3 mb-1 self-end"
+        className={cn(
+          'hidden lg:flex h-14 items-center rounded-xl px-2 text-left hover:bg-navy-800/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500',
+          collapsed ? 'mx-auto w-10 justify-center' : 'mx-2 gap-2'
+        )}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        <img src="/Header_logo.png" alt="" className="h-7 w-7 rounded-md object-cover object-left" />
+        {!collapsed && (
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-slate-100">SmartCLI</span>
+            <span className="block text-[10px] text-slate-500">Collapse navigation</span>
+          </span>
+        )}
       </button>
 
       {/* Nav groups */}
@@ -84,13 +89,6 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
           ))}
         </NavGroup>
 
-        {isAuthenticated && (
-          <NavGroup label="Workspace" collapsed={collapsed}>
-            {workspaceItems.map((item) => (
-              <SidebarItem key={item.to} item={item} collapsed={collapsed} onClose={onClose} />
-            ))}
-          </NavGroup>
-        )}
       </div>
 
       {/* User area */}
@@ -113,14 +111,16 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
               </div>
             )}
             {!collapsed && (
-              <button
-                onClick={() => { signOut(); navigate('/'); }}
-                className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded"
-                aria-label="Sign out"
-                title="Sign out"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                {!isPro && (
+                  <button onClick={() => navigate('/billing/return')} className="flex items-center gap-1 rounded-md bg-violet-500/15 px-2 py-1 text-[10px] font-semibold text-violet-300 hover:bg-violet-500/25">
+                    <Sparkles className="h-3 w-3" /> Upgrade
+                  </button>
+                )}
+                <button onClick={() => { signOut(); navigate('/'); }} className="rounded p-1 text-slate-500 hover:text-slate-300" aria-label="Sign out" title="Sign out">
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
             )}
           </div>
         ) : (

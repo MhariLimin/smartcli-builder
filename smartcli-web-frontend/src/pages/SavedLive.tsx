@@ -8,6 +8,7 @@ import { FolderNameModal } from '../components/FolderNameModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { EmptyState } from '../components/EmptyState';
 import { Skeleton, SkeletonBar, SkeletonRow } from '../components/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
 
 const ROW_ICON_BUTTON =
   'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
@@ -199,19 +200,10 @@ export function SavedPage() {
 
   return (
     <div className="space-y-4">
-      <header className="space-y-2">
-        <div className="text-2xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">
-          Personal library
-        </div>
-        <h1 className="page-title">
-          Saved Commands
-        </h1>
-        <p className="page-description">
-          Curated library, separate from history. Pick a folder, optionally
-          narrow with a tag chip, then copy, edit, or send any row back to
-          the Builder.
-        </p>
-      </header>
+      <PageHeader
+        title="Saved commands"
+        description="Organize reusable commands by folder, then narrow the library with field filters and quick-pick tags."
+      />
 
       {error && (
         <div className="text-sm text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900 rounded p-3">
