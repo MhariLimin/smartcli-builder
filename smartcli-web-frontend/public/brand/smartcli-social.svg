@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">SmartCLI</title>
+  <desc id="desc">Validated commands, built with intent.</desc>
+  <defs>
+    <radialGradient id="glow" cx="76%" cy="18%" r="75%">
+      <stop offset="0" stop-color="#173553"/>
+      <stop offset="1" stop-color="#050a12"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g transform="translate(96 91) scale(1.5)">
+    <rect width="64" height="64" rx="16" fill="#07111f" stroke="#2c425d"/>
+    <path d="m18 22 9 10-9 10" fill="none" stroke="#67d7e5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M33 42h14" fill="none" stroke="#a78bfa" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="216" y="168" fill="#f1f5f9" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="72" font-weight="750" letter-spacing="-2">Smart<tspan fill="#67d7e5">CLI</tspan></text>
+  <text x="96" y="325" fill="#f1f5f9" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="58" font-weight="700">Validated commands,</text>
+  <text x="96" y="395" fill="#f1f5f9" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="58" font-weight="700">built with intent.</text>
+  <text x="100" y="478" fill="#94a3b8" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="27">Guided authoring for operational CLI workflows.</text>
+  <rect x="96" y="535" width="1008" height="2" fill="#263a52"/>
+</svg>

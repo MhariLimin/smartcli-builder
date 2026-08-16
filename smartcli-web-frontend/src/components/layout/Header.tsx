@@ -41,7 +41,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <img src="/Header_logo.png" alt="SmartCLI" className="h-7 w-auto object-contain lg:hidden" />
+        <img src="/brand/smartcli-wordmark.svg" alt="SmartCLI" className="h-7 w-[112px] object-contain object-left lg:hidden" />
         <button
           onClick={openPalette}
           className="hidden w-64 items-center gap-2 rounded-lg border border-navy-700 bg-navy-850 px-3 py-1.5 text-slate-500 transition hover:border-navy-600 hover:text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 md:flex"

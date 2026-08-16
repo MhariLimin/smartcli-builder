@@ -1,51 +1,68 @@
-# smartcli-web
+# SmartCLI
 
-A web application that helps engineers compose CLI commands across the tools
-they use every day — `kubectl`, `docker`, `git`, `ssh`, `mysql`, `kafka`,
-`keytool`, `kcadm`, `mvn`, `gradle`, `containerd`, PowerShell, and standard
-Linux utilities.
+SmartCLI turns operational intent into validated, reusable CLI commands without executing them.
 
-It does three things:
+It is built for engineers who know what they need to accomplish but do not want to memorize every flag, placeholder, and tool-specific syntax. Instead of returning an opaque command from a general-purpose chat, SmartCLI guides users through a curated catalog, makes every variable explicit, and keeps the final command under the user's control.
 
-1. **Suggests the next token** as you type — `kubectl` → `kubectl get` →
-   `kubectl get pods` → `kubectl get pods -n <namespace>`.
-2. **Detects placeholders** such as `<namespace>`, `<pod-name>`, or
-   `<file-path>` and renders them as labelled input fields with contextual
-   hints.
-3. **Builds the final command** with one-click copy and a per-user history of
-   commands you have run before.
+> SmartCLI is a command authoring tool, not a remote shell. It does not execute commands, connect to infrastructure, or collect private keys and kubeconfigs.
 
-## Project layout
+## Why it exists
 
+Operational commands are easy to get almost right. A missing namespace, reversed flag, or command copied without context can be expensive. Search engines and chat assistants are useful for discovery, but their answers may be unvalidated, difficult to reproduce, and detached from team conventions.
+
+SmartCLI provides a narrower, safer workflow:
+
+1. Find a reviewed command template by tool or intent.
+2. Fill named inputs with contextual guidance.
+3. Inspect the complete command before copying it.
+4. Save and reuse known-good commands locally.
+
+The differentiator is not “AI writes shell commands.” It is a structured authoring layer between intent and the terminal: catalog-backed, inspectable, and designed to grow into team-governed runbooks.
+
+## Current product
+
+The production build currently includes:
+
+- Progressive command suggestions across Kubernetes, Docker, Git, SSH, databases, build tools, and Linux utilities.
+- Explicit placeholder inputs and a live final-command preview.
+- Catalog browsing, saved commands, folders, tags, history, copy, and share-link workflows.
+- Light and dark themes, keyboard navigation, and responsive layouts.
+- A Spring Boot API backed by a versioned JSON command catalog and file-based local persistence.
+
+Development-only previews explore authentication, roles, workspaces, AI generation, Kubernetes workflows, and SSH workflows. They are intentionally excluded from production bundles and are not presented as implemented integrations. Supabase-backed authentication and persistence are planned next.
+
+See [architecture and trust boundaries](docs/portfolio/architecture.md) for the system shape and [the evaluator demo](docs/portfolio/demo-script.md) for a repeatable product tour.
+
+## Safety model
+
+- Commands are generated and displayed, never executed.
+- Inputs remain visible before copy or save.
+- Production features do not depend on mock authentication or preview fixtures.
+- The catalog is version-controlled and reviewable.
+- Secrets, credentials, private keys, kubeconfigs, and remote shell access are outside the product boundary.
+
+## Architecture
+
+```text
+React + TypeScript UI  ->  Spring Boot REST API  ->  reviewed commands.json
+                                  |
+                                  +--------------> local history persistence
 ```
-Projects/smartcli-web/
-├── README.md
-├── smartcli-web-backend/      Spring Boot 3 / Java 17 API
-└── smartcli-web-frontend/     React 18 + TypeScript + Vite + Tailwind UI
-```
 
-## Prerequisites
+The frontend owns composition and interaction. The API owns catalog search, placeholder metadata, and history. Persistence and identity are deliberately separated behind boundaries that can later be replaced with Supabase and role-aware policies.
 
-- Java 17 or newer
-- Maven 3.9 or newer
-- Node.js 18 or newer
+## Run locally
 
-## Running locally
+Prerequisites: Java 17+, Maven 3.9+, and Node.js 18+.
 
-### Backend
+Start the API:
 
 ```bash
 cd smartcli-web-backend
 mvn spring-boot:run
 ```
 
-The API listens on `http://localhost:8080`.
-
-Command history is persisted to `~/.smartcli-web/history.json`. The path can
-be overridden with the `smartcli-web.history-file` property in
-`application.yml`.
-
-### Frontend
+Start the web app in another terminal:
 
 ```bash
 cd smartcli-web-frontend
@@ -53,61 +70,65 @@ npm install
 npm run dev
 ```
 
-The development server is available at `http://localhost:5173`. Vite proxies
-`/api/*` requests to the backend on port `8080`, so no CORS configuration is
-required during development. CORS is also enabled server-side for
-`http://localhost:5173` if you prefer to run the UI without the proxy.
+Open `http://localhost:5173`. Vite proxies `/api/*` to the API at `http://localhost:8080`.
 
-## API
+For a production-equivalent frontend build:
 
-| Endpoint | Method | Description |
+```bash
+cd smartcli-web-frontend
+npm run build
+npm run verify:production-integrity
+```
+
+For explicitly labeled design previews:
+
+```bash
+cd smartcli-web-frontend
+npm run build:demo
+```
+
+## Verify
+
+```bash
+cd smartcli-web-frontend
+npm run lint
+npm run build
+
+cd ../smartcli-web-backend
+mvn test
+```
+
+## Key API endpoints
+
+| Endpoint | Method | Purpose |
 |---|---|---|
-| `/api/suggestions?q=<typed>&limit=30` | GET | Returns next-token extensions and full templates that match the typed prefix. |
-| `/api/placeholders?template=<template>` | GET | Returns placeholder names with friendly labels and hints (for example `<namespace>` → "e.g. default, kube-system"). |
-| `/api/categories` | GET | Lists the categories present in the catalog. |
-| `/api/templates?category=<category>` | GET | Browses the catalog, optionally filtered by category. |
-| `/api/history` | GET / POST / DELETE | Lists, saves, or clears finalized commands. |
-| `/api/history/{id}` | DELETE | Deletes a single history entry. |
+| `/api/suggestions?q=<typed>&limit=30` | GET | Find next-token extensions and matching templates. |
+| `/api/placeholders?template=<template>` | GET | Resolve placeholder labels and contextual hints. |
+| `/api/categories` | GET | List catalog categories. |
+| `/api/templates?category=<category>` | GET | Browse templates, optionally by category. |
+| `/api/history` | GET / POST / DELETE | List, save, or clear command history. |
+| `/api/history/{id}` | DELETE | Remove one history entry. |
 
-## How it works
+## Extend the catalog
 
-### Backend
-
-The command catalog lives in
-`smartcli-web-backend/src/main/resources/commands.json`. Each entry is a
-`{ category, template, description }` triple, with placeholders written as
-`<name>`. The suggestion engine treats placeholders as wildcard tokens when
-deciding whether the typed prefix still matches a template.
-
-### Frontend
-
-The React UI is composed of three coordinated views:
-
-- A **search input** at the top fires a debounced `/api/suggestions` request
-  as the user types. Selecting an extension (`kubectl get`) appends a
-  trailing space and re-queries; selecting a full template locks it in.
-- A **placeholder form** appears as soon as a template with `<…>` slots is
-  active. It renders one labelled input per placeholder, with a hint derived
-  from the placeholder name.
-- A **command preview** displays the live, substituted command. A *Copy*
-  button uses the Clipboard API (with a `document.execCommand` fallback) and
-  a *Save to history* button posts to `/api/history`.
-
-A right-hand **history panel** lists recent commands; selecting one reuses
-it.
-
-## Extending the catalog
-
-Add a new entry to `smartcli-web-backend/src/main/resources/commands.json`:
+Add a reviewed entry to `smartcli-web-backend/src/main/resources/commands.json`:
 
 ```json
 {
   "category": "redis",
-  "template": "redis-cli -h <host> -p <port> -a <password> ping",
+  "template": "redis-cli -h <host> -p <port> ping",
   "description": "Ping a Redis server"
 }
 ```
 
-Anything written inside `<…>` automatically becomes an input field. Restart
-the backend and the new template will appear in suggestions. To provide a
-nicer placeholder hint, add a case to `CommandCatalogService#hintFor`.
+Text inside angle brackets becomes a guided input automatically. Keep secrets out of catalog examples.
+
+## Roadmap
+
+- Supabase authentication and durable persistence.
+- Role-based catalog governance and workspace policies.
+- Explainable command segments, warnings, and source provenance.
+- Reviewable team runbooks and environment profiles.
+- Automated catalog schema and safety validation in CI.
+
+The roadmap describes direction, not currently shipped functionality.

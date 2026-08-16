@@ -62,9 +62,9 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         <img
-          src="/Header_logo.png"
+          src={collapsed ? '/brand/smartcli-mark.svg' : '/brand/smartcli-wordmark.svg'}
           alt="SmartCLI"
-          className={cn('h-7 max-w-none object-contain object-left', collapsed ? 'w-[73px]' : 'w-auto max-w-[156px]')}
+          className={collapsed ? 'h-8 w-8' : 'h-8 w-[144px] object-contain object-left'}
         />
       </button>
 
