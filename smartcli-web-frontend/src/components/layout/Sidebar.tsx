@@ -19,7 +19,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Builder', to: '/', icon: <Wrench className="w-4 h-4" />, group: 'core' },
+  { label: 'Builder', to: '/builder', icon: <Wrench className="w-4 h-4" />, group: 'core' },
   { label: 'Saved', to: '/saved', icon: <BookMarked className="w-4 h-4" />, group: 'core' },
   { label: 'History', to: '/history', icon: <History className="w-4 h-4" />, group: 'core' },
   { label: 'Catalog', to: '/catalog', icon: <Library className="w-4 h-4" />, group: 'core' },
@@ -61,11 +61,14 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
         )}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        <img
-          src={collapsed ? '/brand/smartcli-mark.svg' : '/brand/smartcli-wordmark.svg'}
-          alt="SmartCLI"
-          className={collapsed ? 'h-8 w-8' : 'h-8 w-[144px] object-contain object-left'}
-        />
+        {collapsed ? (
+          <img src="/brand/smartcli-mark.svg" alt="SmartCLI" className="h-8 w-8" />
+        ) : (
+          <>
+            <img src="/brand/smartcli-wordmark-light.svg" alt="SmartCLI" className="h-8 w-[144px] object-contain object-left dark:hidden" />
+            <img src="/brand/smartcli-wordmark.svg" alt="" className="hidden h-8 w-[144px] object-contain object-left dark:block" />
+          </>
+        )}
       </button>
 
       {/* Nav groups */}
@@ -176,7 +179,7 @@ function SidebarItem({
   return (
     <NavLink
       to={item.to}
-      end={item.to === '/'}
+      end
       onClick={onClose}
       title={collapsed ? item.label : undefined}
       className={({ isActive }) =>

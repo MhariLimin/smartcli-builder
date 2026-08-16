@@ -51,7 +51,7 @@ const NAV_TARGETS: Omit<PaletteResult, 'score'>[] = [
     kind: 'navigate',
     title: 'Go to Builder',
     subtitle: 'Compose a command',
-    path: '/'
+    path: '/builder'
   },
   {
     id: 'nav-saved',
@@ -115,7 +115,7 @@ function seedBuilderPath(command: string, category?: string | null): string {
   const params = new URLSearchParams();
   params.set('template', command);
   if (category) params.set('category', category);
-  return '/?' + params.toString();
+  return '/builder?' + params.toString();
 }
 
 function toRecent(result: PaletteResult): RecentAction {

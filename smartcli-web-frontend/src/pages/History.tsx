@@ -65,7 +65,7 @@ export function HistoryPage() {
   const useInBuilder = (entry: HistoryEntry) => {
     const params = new URLSearchParams({ template: entry.command });
     if (entry.category) params.set('category', entry.category);
-    navigate(`/?${params.toString()}`);
+    navigate(`/builder?${params.toString()}`);
   };
 
   if (!isAuthenticated) {
@@ -117,7 +117,7 @@ export function HistoryPage() {
               ? 'Try a different search term.'
               : 'Commands copied in the Builder are recorded here.'
           }
-          action={searchQuery ? undefined : { label: 'Open Builder', onClick: () => navigate('/') }}
+          action={searchQuery ? undefined : { label: 'Open Builder', onClick: () => navigate('/builder') }}
         />
       ) : (
         groups.map((group) => (

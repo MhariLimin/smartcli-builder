@@ -12,13 +12,13 @@ export function ShareRedirect() {
   useEffect(() => {
     const decoded = payload ? decode(payload) : null;
     if (!decoded) {
-      navigate('/?share_error=invalid', { replace: true });
+      navigate('/builder?share_error=invalid', { replace: true });
       return;
     }
     const qs = new URLSearchParams();
     qs.set('template', decoded.cmd);
     if (decoded.cat) qs.set('category', decoded.cat);
-    navigate('/?' + qs.toString(), { replace: true });
+    navigate('/builder?' + qs.toString(), { replace: true });
   }, [payload, navigate]);
 
   return null;

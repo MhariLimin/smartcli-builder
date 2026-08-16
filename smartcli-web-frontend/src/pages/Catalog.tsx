@@ -8,7 +8,7 @@ export function CatalogPage() {
     const params = new URLSearchParams();
     params.set('template', template);
     if (category) params.set('category', category);
-    navigate('/?' + params.toString());
+    navigate('/builder?' + params.toString());
   };
 
   return <CatalogView onUseTemplate={onUseTemplate} />;

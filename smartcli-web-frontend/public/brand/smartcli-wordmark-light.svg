@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" role="img" aria-labelledby="title">
+  <title id="title">SmartCLI</title>
+  <g transform="translate(4 8)">
+    <rect width="64" height="64" rx="16" fill="#07111f"/>
+    <rect x="11" y="13" width="42" height="38" rx="9" fill="#0d1b2e" stroke="#2c425d" stroke-width="2"/>
+    <path d="m20 25 7 7-7 7" fill="none" stroke="#67d7e5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M32 40h13" fill="none" stroke="#a78bfa" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="84" y="53" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="42" font-weight="750" letter-spacing="-1.5">Smart<tspan fill="#256580">CLI</tspan></text>
+</svg>

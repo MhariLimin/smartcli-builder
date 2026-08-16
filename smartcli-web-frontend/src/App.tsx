@@ -14,6 +14,7 @@ import { ShareRedirect } from './pages/ShareRedirect';
 import NotFound from './pages/NotFound';
 import { usePalette } from './context/AppContext';
 import { DEMO_MODE } from './config/demoMode';
+import Landing from './pages/Landing';
 
 const AIGenerate = lazy(() => import('./pages/AIGenerate'));
 const BillingReturn = lazy(() => import('./pages/BillingReturn'));
@@ -41,11 +42,12 @@ export default function App() {
         <ToastProvider>
           <Suspense fallback={null}>
             <Routes>
+            <Route index element={<Landing />} />
             {DEMO_MODE && <Route path="/login" element={<Login />} />}
             {DEMO_MODE && <Route path="/billing/return" element={<BillingReturn />} />}
 
             <Route element={<AppShell />}>
-              <Route index element={<BuilderPage />} />
+              <Route path="/builder" element={<BuilderPage />} />
               <Route path="/saved" element={<SavedPage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/catalog" element={<CatalogPage />} />

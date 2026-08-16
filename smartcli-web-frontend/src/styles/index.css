@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -144,6 +144,109 @@
 }
 
 @layer utilities {
+  .landing-font {
+    font-family: 'Manrope', 'Inter', system-ui, sans-serif;
+  }
+
+  .cli-display {
+    font-family: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  .landing-enter {
+    animation: landingEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .landing-enter-delay {
+    animation: landingEnter 0.7s 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .cli-cursor {
+    display: inline-block;
+    width: 0.58em;
+    height: 1.05em;
+    margin-left: 0.12em;
+    vertical-align: -0.08em;
+    background: currentColor;
+    animation: cliCursor 0.9s steps(1, end) infinite;
+  }
+
+  .terminal-panel {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .terminal-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(to bottom, transparent 48%, rgba(99, 183, 197, 0.035) 50%, transparent 52%);
+    background-size: 100% 7px;
+    opacity: 0.6;
+  }
+
+  .cli-output {
+    animation: cliOutput 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .reveal-section {
+    position: relative;
+  }
+
+  .reveal-section::after {
+    content: '';
+    position: absolute;
+    z-index: 20;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(50, 152, 170, 0.7), transparent);
+    opacity: 0;
+  }
+
+  .reveal-section[data-reveal='scan']::after {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+  }
+
+  .reveal-section.is-visible[data-reveal='scan'] > * {
+    animation: revealScanContent 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .reveal-section.is-visible[data-reveal='left'] > * {
+    animation: revealFromLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .reveal-section.is-visible[data-reveal='right'] > * {
+    animation: revealFromRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .reveal-section.is-visible article {
+    animation: revealCard 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .reveal-section.is-visible article:nth-of-type(2) {
+    animation-delay: 90ms;
+  }
+
+  .reveal-section.is-visible article:nth-of-type(3) {
+    animation-delay: 180ms;
+  }
+
+  .reveal-section.is-visible[data-reveal='scan']::after {
+    animation: sectionScan 0.85s 0.08s ease-out both;
+  }
+
+  .cli-word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(7px);
+    filter: blur(3px);
+    animation: cliWord 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
   .scrollbar-none {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -166,5 +269,55 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+
+  @keyframes landingEnter {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes cliCursor {
+    0%, 48% { opacity: 1; }
+    49%, 100% { opacity: 0; }
+  }
+
+  @keyframes cliOutput {
+    from { opacity: 0; transform: translateX(-10px); filter: blur(2px); }
+    to { opacity: 1; transform: translateX(0); filter: blur(0); }
+  }
+
+  @keyframes cliWord {
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+  @keyframes sectionScan {
+    0% { opacity: 0; transform: translateY(0); }
+    15% { opacity: 1; }
+    85% { opacity: 0.8; }
+    100% { opacity: 0; transform: translateY(18rem); }
+  }
+
+  @keyframes revealScanContent {
+    0% { opacity: 0.18; transform: translateY(34px) scale(0.985); filter: blur(7px) saturate(0.65); }
+    45% { opacity: 0.82; filter: blur(1px) saturate(0.9); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0) saturate(1); }
+  }
+
+  @keyframes revealFromLeft {
+    0% { opacity: 0.15; transform: translateX(-52px); filter: blur(7px); }
+    65% { opacity: 1; transform: translateX(4px); filter: blur(0); }
+    100% { opacity: 1; transform: translateX(0); filter: blur(0); }
+  }
+
+  @keyframes revealFromRight {
+    0% { opacity: 0.15; transform: translateX(52px); filter: blur(7px); }
+    65% { opacity: 1; transform: translateX(-4px); filter: blur(0); }
+    100% { opacity: 1; transform: translateX(0); filter: blur(0); }
+  }
+
+  @keyframes revealCard {
+    0% { opacity: 0; transform: translateY(24px) scale(0.97); }
+    60% { opacity: 1; transform: translateY(-3px) scale(1.005); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
   }
 }

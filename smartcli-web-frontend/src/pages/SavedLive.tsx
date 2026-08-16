@@ -173,11 +173,11 @@ export function SavedPage() {
     const params = new URLSearchParams();
     params.set('template', s.command);
     if (s.category) params.set('category', s.category);
-    navigate('/?' + params.toString());
+    navigate('/builder?' + params.toString());
   };
 
   const goToBuilder = () => {
-    navigate('/');
+    navigate('/builder');
   };
 
   const onCopy = async (text: string) => {

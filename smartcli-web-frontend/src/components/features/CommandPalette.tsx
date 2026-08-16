@@ -25,7 +25,7 @@ const NAV_ITEMS: Omit<PaletteItem, 'onSelect'>[] = [
 ];
 
 const NAV_PATHS: Record<string, string> = {
-  'nav-builder': '/',
+  'nav-builder': '/builder',
   'nav-saved': '/saved',
   'nav-history': '/history',
   'nav-catalog': '/catalog',
