@@ -8,6 +8,7 @@ import { useAuth, usePalette, useTheme, type Presence, type ThemeMode } from '..
 import { PlanBadge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { DropdownMenu } from '../ui/Dropdown';
+import { DEMO_MODE } from '../../config/demoMode';
 
 const PRESENCE: Record<Presence, { label: string; color: string }> = {
   active: { label: 'Active', color: 'bg-green-400' },
@@ -101,9 +102,9 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
               { label: 'Sign out', icon: <LogOut className="h-4 w-4" />, onClick: () => { signOut(); navigate('/'); }, danger: true, dividerBefore: true },
             ]}
           />
-        ) : (
+        ) : DEMO_MODE ? (
           <Button variant="primary" size="sm" onClick={() => navigate('/login')}>Sign in</Button>
-        )}
+        ) : null}
       </div>
     </header>
   );

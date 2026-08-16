@@ -3,8 +3,11 @@ import React, {
   useReducer, useRef, useState,
 } from 'react';
 import type { AuthState, Workspace } from '../mock-types';
-import { WORKSPACES } from '../mock/data';
-import { DEFAULT_SCENARIO, SCENARIOS, type ScenarioId } from '../mock/scenarios';
+import { DEFAULT_DEMO_SCENARIO, DEMO_MODE } from '../config/demoMode';
+
+type ScenarioId = string;
+
+interface DemoScenario { id: ScenarioId; authState: AuthState }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -125,14 +128,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Auth / Scenario
   const [scenarioId, setScenarioId] = useState<ScenarioId>(() => {
     const stored = localStorage.getItem('scenario') as ScenarioId | null;
-    return stored ?? DEFAULT_SCENARIO;
+    return DEMO_MODE ? stored ?? DEFAULT_DEMO_SCENARIO : 'guest';
   });
 
+  const [scenarios, setScenarios] = useState<DemoScenario[]>([]);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [presence, setPresence] = useState<Presence>('active');
 
-  const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
-  const authState = scenario.authState;
+  useEffect(() => {
+    if (!DEMO_MODE) return;
+    let cancelled = false;
+    import('../demo/runtime').then(({ loadDemoRuntime }) => loadDemoRuntime()).then((data) => {
+      if (cancelled) return;
+      setScenarios(data.scenarios);
+      setWorkspaces(data.workspaces);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const scenario = scenarios.find((item) => item.id === scenarioId) ?? scenarios[0];
+  const authState: AuthState = DEMO_MODE && scenario ? scenario.authState : { type: 'guest' };
 
   const isAuthenticated = authState.type === 'authenticated';
   const baseWorkspace =
@@ -140,7 +156,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const currentWorkspace =
     workspaceId
-      ? WORKSPACES.find((w) => w.id === workspaceId) ?? baseWorkspace
+      ? workspaces.find((w) => w.id === workspaceId) ?? baseWorkspace
       : baseWorkspace;
 
   const isPro = currentWorkspace?.plan === 'pro';
@@ -150,12 +166,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     (authState.role === 'owner' || authState.role === 'admin' || authState.role === 'member');
 
   const setScenario = useCallback((id: ScenarioId) => {
+    if (!DEMO_MODE) return;
     setScenarioId(id);
     setWorkspaceId(null);
     localStorage.setItem('scenario', id);
   }, []);
 
   const signIn = useCallback(async (email: string, _password: string) => {
+    if (!DEMO_MODE) throw new Error('Authentication is not configured for this build.');
     // Mock: match by email
     if (email.includes('john')) {
       setScenario('pro-admin');
@@ -221,7 +239,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           signIn,
           signOut,
           currentWorkspace: currentWorkspace ?? null,
-          allWorkspaces: isAuthenticated ? WORKSPACES : [],
+          allWorkspaces: isAuthenticated ? workspaces : [],
           switchWorkspace,
           isPro,
           isAuthenticated,

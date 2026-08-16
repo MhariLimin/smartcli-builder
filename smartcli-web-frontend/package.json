@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:demo": "tsc -b && vite build --mode demo",
+    "verify:production-integrity": "node scripts/verify-production-integrity.mjs",
     "preview": "vite preview",
     "gen:api": "openapi-typescript http://localhost:8080/v3/api-docs -o src/api/generated/openapi.d.ts"
   },

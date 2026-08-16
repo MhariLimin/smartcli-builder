@@ -4,15 +4,18 @@ import { cn } from '../../lib/boltUtils';
 import { useAuth } from '../../context/AppContext';
 import { SCENARIOS, type ScenarioId } from '../../mock/scenarios';
 import { supabaseConnectionMode } from '../../lib/supabase';
+import { DEMO_MODE } from '../../config/demoMode';
 
 export function DevScenarioSwitcher() {
   const { scenarioId, setScenario } = useAuth();
   const [open, setOpen] = useState(false);
 
+  if (!DEMO_MODE) return null;
+
   const current = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
 
   return (
-    <div className="fixed bottom-4 left-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50">
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
@@ -32,7 +35,7 @@ export function DevScenarioSwitcher() {
         </button>
 
         {open && (
-          <div className="absolute bottom-full mb-2 left-0 w-72 bg-navy-850 border border-navy-700 rounded-xl shadow-xl overflow-hidden animate-slide-up">
+          <div className="absolute bottom-full right-0 mb-2 w-72 overflow-hidden rounded-xl border border-navy-700 bg-navy-850 shadow-xl animate-slide-up">
             <div className="px-3 py-2 border-b border-navy-800">
               <p className="text-xs font-semibold text-violet-400">Dev Mode — Scenario Switcher</p>
               <p className="text-2xs text-slate-500 mt-0.5">

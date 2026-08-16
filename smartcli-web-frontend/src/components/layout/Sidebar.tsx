@@ -8,6 +8,7 @@ import {
 import { cn } from '../../lib/boltUtils';
 import { useAuth } from '../../context/AppContext';
 import { RoleBadge } from '../ui/Badge';
+import { DEMO_MODE } from '../../config/demoMode';
 
 interface NavItem {
   label: string;
@@ -41,7 +42,7 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
   const role = authState.type === 'authenticated' ? authState.role : null;
 
   const coreItems = NAV_ITEMS.filter((n) => n.group === 'core');
-  const proItems = NAV_ITEMS.filter((n) => n.group === 'pro');
+  const proItems = DEMO_MODE ? NAV_ITEMS.filter((n) => n.group === 'pro') : [];
 
   return (
     <nav
@@ -75,17 +76,19 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
           ))}
         </NavGroup>
 
-        <NavGroup label="Pro" collapsed={collapsed}>
-          {proItems.map((item) => (
-            <SidebarItem
-              key={item.to}
-              item={item}
-              collapsed={collapsed}
-              locked={!isPro}
-              onClose={onClose}
-            />
-          ))}
-        </NavGroup>
+        {DEMO_MODE && (
+          <NavGroup label="Demo previews" collapsed={collapsed}>
+            {proItems.map((item) => (
+              <SidebarItem
+                key={item.to}
+                item={item}
+                collapsed={collapsed}
+                locked={!isPro}
+                onClose={onClose}
+              />
+            ))}
+          </NavGroup>
+        )}
 
       </div>
 
@@ -121,7 +124,7 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
               </div>
             )}
           </div>
-        ) : (
+        ) : DEMO_MODE ? (
           <button
             onClick={() => { navigate('/login'); onClose?.(); }}
             className={cn(
@@ -132,7 +135,7 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
             <LogIn className="w-4 h-4 flex-shrink-0" />
             {!collapsed && <span>Sign in</span>}
           </button>
-        )}
+        ) : null}
       </div>
     </nav>
   );
