@@ -9,6 +9,8 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { EmptyState } from '../components/EmptyState';
 import { Skeleton, SkeletonBar, SkeletonRow } from '../components/Skeleton';
 import { PageHeader } from '../components/ui/PageHeader';
+import { DropdownMenu } from '../components/ui/Dropdown';
+import { MoreHorizontal } from 'lucide-react';
 
 const ROW_ICON_BUTTON =
   'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
@@ -16,13 +18,6 @@ const ROW_ICON_BUTTON =
   'bg-white dark:bg-slate-800 ' +
   'text-slate-700 dark:text-slate-300 ' +
   'hover:bg-slate-100 dark:hover:bg-slate-700';
-
-const ROW_USE_BUTTON =
-  'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
-  'border-sky-300 dark:border-sky-700 ' +
-  'bg-sky-100 dark:bg-sky-900/40 ' +
-  'text-sky-800 dark:text-sky-100 ' +
-  'hover:bg-sky-200 dark:hover:bg-sky-900/70';
 
 // "Uncategorized" sentinel matches the backend's matching rule for saved
 // commands with no folder. The Sidebar folder tree treats it as a virtual
@@ -622,39 +617,20 @@ function SavedRow({
           >
             <CopyIcon />
           </button>
-          <button
-            onClick={handleShare}
-            className={ROW_ICON_BUTTON}
-            title="Copy share link"
-            aria-label="Copy share link"
-          >
-            <ShareIcon />
-          </button>
-          <button
-            onClick={onToggleExpand}
-            className={ROW_ICON_BUTTON + (expanded ? ' bg-slate-100 dark:bg-slate-700' : '')}
-            title={expanded ? 'Collapse details' : 'Edit details'}
-            aria-label={expanded ? 'Collapse details' : 'Edit details'}
-            aria-expanded={expanded}
-          >
-            <EditIcon />
-          </button>
-          <button
-            onClick={onDelete}
-            className={ROW_ICON_BUTTON + ' hover:text-rose-600 dark:hover:text-rose-300'}
-            title="Delete saved command"
-            aria-label="Delete saved command"
-          >
-            <TrashIcon />
-          </button>
-          <button
-            onClick={onUseInBuilder}
-            className={ROW_USE_BUTTON}
-            title="Use in Builder"
-            aria-label="Use in Builder"
-          >
-            <UseIcon />
-          </button>
+          <DropdownMenu
+            align="right"
+            trigger={
+              <button className={ROW_ICON_BUTTON} title="More actions" aria-label="More actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            }
+            items={[
+              { label: 'Use in Builder', icon: <UseIcon />, onClick: onUseInBuilder },
+              { label: 'Copy share link', icon: <ShareIcon />, onClick: handleShare },
+              { label: expanded ? 'Collapse details' : 'Edit details', icon: <EditIcon />, onClick: onToggleExpand },
+              { label: 'Delete saved command', icon: <TrashIcon />, onClick: onDelete, danger: true, dividerBefore: true },
+            ]}
+          />
         </div>
       </div>
       {shareFlash && (
