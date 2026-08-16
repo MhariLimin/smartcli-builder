@@ -15,7 +15,7 @@ export function SlotInput({ placeholder: p, value, error, onChange }: SlotInputP
     <button
       type="button"
       onClick={() => onChange(p.defaultValue ?? '')}
-      className="min-h-8 rounded px-2 text-xs font-medium text-sky-700 hover:bg-sky-50 hover:text-sky-800
+      className="h-7 rounded px-1.5 text-[11px] font-medium text-sky-700 hover:bg-sky-50 hover:text-sky-800
                  dark:text-sky-300 dark:hover:bg-sky-950/60 dark:hover:text-sky-200"
     >
       Reset
@@ -23,14 +23,14 @@ export function SlotInput({ placeholder: p, value, error, onChange }: SlotInputP
   ) : null;
 
   const labelRow = (
-    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm font-medium text-slate-800 dark:text-slate-200">
+    <div className="flex flex-wrap items-baseline gap-x-1.5 text-xs font-medium text-slate-800 dark:text-slate-200">
       <span className="font-mono text-amber-700 dark:text-amber-300">&lt;{p.name}&gt;</span>
       {p.type && (
         <span className="text-[10px] uppercase tracking-wide text-slate-500">
           {p.type === 'enum' ? 'select' : p.type}
         </span>
       )}
-      <span className="text-xs text-slate-600 dark:text-slate-400">{p.label}</span>
+      <span className="text-[11px] text-slate-600 dark:text-slate-400">{p.label}</span>
     </div>
   );
 
@@ -62,7 +62,7 @@ export function SlotInput({ placeholder: p, value, error, onChange }: SlotInputP
                   role="radio"
                   aria-checked={selected}
                   onClick={() => onChange(opt)}
-                  className={`min-h-11 min-w-0 border-r border-slate-200 px-2 py-2 font-mono text-sm transition last:border-r-0
+                  className={`h-9 min-w-0 border-r border-slate-200 px-2 font-mono text-xs transition last:border-r-0
                              dark:border-slate-800
                              ${
                                selected
@@ -89,7 +89,7 @@ export function SlotInput({ placeholder: p, value, error, onChange }: SlotInputP
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`mt-1 min-h-11 w-full rounded border bg-white px-3 py-2 font-mono text-sm text-slate-900
+          className={`mt-1 h-9 w-full rounded border bg-white px-2.5 font-mono text-xs text-slate-900
                      focus:border-sky-500 focus:outline-none dark:bg-slate-950 dark:text-slate-100
                      ${error ? 'border-rose-600' : 'border-slate-300 dark:border-slate-700'}`}
         >
@@ -112,12 +112,12 @@ export function SlotInput({ placeholder: p, value, error, onChange }: SlotInputP
     return (
       <div>
         <div className="flex items-start justify-between gap-2">
-          <label className="flex min-h-11 items-center gap-3">
+          <label className="flex h-9 items-center gap-2">
             <input
               type="checkbox"
               checked={checked}
               onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
-              className="h-5 w-5 accent-sky-500"
+              className="h-4 w-4 accent-sky-500"
             />
             {labelRow}
           </label>
@@ -152,15 +152,15 @@ export function SlotInput({ placeholder: p, value, error, onChange }: SlotInputP
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={p.hint}
-          className={`${numeric ? '' : 'mt-1'} min-h-11 w-full rounded border bg-white px-3 py-2
-                     font-mono text-sm text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:outline-none
+          className={`${numeric ? '' : 'mt-1'} h-9 w-full rounded border bg-white px-2.5
+                     font-mono text-xs text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:outline-none
                      dark:bg-slate-950 dark:text-slate-100 dark:placeholder-slate-600
                      ${error ? 'border-rose-600' : 'border-slate-300 dark:border-slate-700'}`}
           spellCheck={false}
           autoComplete="off"
         />
         {numeric && (
-          <div className="grid w-11 shrink-0 grid-rows-2 overflow-hidden rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-950">
+          <div className="grid w-9 shrink-0 grid-rows-2 overflow-hidden rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-950">
             <button
               type="button"
               onClick={() => stepNumeric(p, value, 1, onChange)}

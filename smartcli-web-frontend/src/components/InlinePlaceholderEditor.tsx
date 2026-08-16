@@ -118,7 +118,7 @@ export function InlinePlaceholderEditor({
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className={`pointer-events-auto relative z-10 rounded-sm px-0 font-mono text-base leading-[1.5]
+        className={`pointer-events-auto relative z-10 rounded-sm px-0 font-mono text-xs leading-[1.5]
                    outline-none ring-offset-1 transition motion-reduce:transition-none
                    focus-visible:ring-2 focus-visible:ring-sky-500
                    ${

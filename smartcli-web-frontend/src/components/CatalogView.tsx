@@ -7,21 +7,21 @@ import { CopyIcon, ShareIcon, UseIcon } from './icons';
 import { EmptyState } from './EmptyState';
 
 const ROW_ICON_BUTTON =
-  'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
+  'inline-flex items-center justify-center h-7 w-7 rounded border transition ' +
   'border-slate-300 dark:border-slate-700 ' +
   'bg-slate-100 dark:bg-slate-800 ' +
   'text-slate-700 dark:text-slate-300 ' +
   'hover:bg-slate-300 dark:hover:bg-slate-700';
 
 const ROW_USE_BUTTON =
-  'inline-flex items-center justify-center h-8 w-8 rounded border transition ' +
+  'inline-flex items-center justify-center h-7 w-7 rounded border transition ' +
   'border-sky-400 dark:border-sky-700 ' +
   'bg-sky-200 dark:bg-sky-900 ' +
   'text-sky-800 dark:text-sky-100 ' +
   'hover:bg-sky-300 dark:hover:bg-sky-800';
 
 const COPIED_BUTTON =
-  'inline-flex items-center justify-center h-8 px-2 rounded border transition ' +
+  'inline-flex items-center justify-center h-7 px-1.5 rounded border transition ' +
   'border-emerald-400 dark:border-emerald-700 ' +
   'bg-emerald-100 dark:bg-emerald-900/40 ' +
   'text-[10px] font-semibold uppercase tracking-wide ' +
@@ -177,15 +177,15 @@ export function CatalogView({ onUseTemplate }: Props) {
   const selectedMeta = selected ? CATEGORY_DOCS[selected] : null;
 
   const searchBar = (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="relative">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search across all templates… e.g. 'kubectl exec', 'tar gz', 'jwt'"
-          className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5
-                     font-mono text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600
+          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3
+                     font-mono text-xs text-slate-900 placeholder-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder-slate-600
                      focus:outline-none focus:border-sky-600"
           spellCheck={false}
           autoComplete="off"
@@ -238,10 +238,13 @@ export function CatalogView({ onUseTemplate }: Props) {
         </span>
       ) : null;
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <header className="space-y-1">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Catalog · search</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="text-2xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">
+            Template library
+          </div>
+          <h1 className="page-title">Catalog search</h1>
+          <p className="page-description">
             Free-text match across template text and description, narrow with category chips.
           </p>
         </header>
@@ -268,12 +271,11 @@ export function CatalogView({ onUseTemplate }: Props) {
           />
         )}
         {!loading && count > 0 && (
-          <ul className="space-y-2">
+          <ul className="space-y-1.5">
             {filteredResults.map((t, idx) => (
               <li
                 key={`${t.category}-${idx}`}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-3
-                           hover:border-slate-400 dark:hover:border-slate-700 transition-colors"
+                className="surface-card p-2.5 hover:border-slate-400 dark:hover:border-navy-600 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -354,7 +356,7 @@ export function CatalogView({ onUseTemplate }: Props) {
   // Detail page — single category browse.
   if (selected) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <button
           onClick={() => setSelected(null)}
           className="text-sm text-sky-600 dark:text-sky-400 hover:text-sky-600 dark:hover:text-sky-300"
@@ -364,7 +366,7 @@ export function CatalogView({ onUseTemplate }: Props) {
 
         {searchBar}
 
-        <div className="flex items-baseline justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <div className="flex items-baseline justify-between gap-3 border-b border-slate-200 pb-2 dark:border-navy-700">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               {categoryLabel(selected)}
@@ -392,12 +394,11 @@ export function CatalogView({ onUseTemplate }: Props) {
         {loading && <div className="text-sm text-slate-500">Loading commands…</div>}
 
         {!loading && (
-          <ul className="space-y-2">
+          <ul className="space-y-1.5">
             {selectedTemplates.map((t, idx) => (
               <li
                 key={`${selected}-${idx}`}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-3
-                           hover:border-slate-400 dark:hover:border-slate-700 transition-colors"
+                className="surface-card p-2.5 hover:border-slate-400 dark:hover:border-navy-600 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
                   <code className="block font-mono text-sm text-slate-900 dark:text-slate-100 break-all">
@@ -461,10 +462,13 @@ export function CatalogView({ onUseTemplate }: Props) {
 
   // Index — category grid.
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Catalog</h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <div className="text-2xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">
+          Template library
+        </div>
+        <h1 className="page-title">Catalog</h1>
+        <p className="page-description">
           Pick a category to see every command and placeholder combination this app can generate
           for it. Each card also links to the upstream documentation. Or search across all
           categories at once.
@@ -479,7 +483,7 @@ export function CatalogView({ onUseTemplate }: Props) {
         </div>
       )}
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <section className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {loading && (
           <div className="text-sm text-slate-500 col-span-full">Loading categories…</div>
         )}
@@ -498,15 +502,16 @@ export function CatalogView({ onUseTemplate }: Props) {
             return (
               <div
                 key={cat}
-                className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg
-                           hover:border-slate-400 dark:hover:border-slate-700 transition-colors"
+                className="surface-card relative overflow-hidden
+                           hover:-translate-y-0.5 hover:border-cyan-500/50 hover:shadow-glow-cyan
+                           transition motion-reduce:transform-none"
               >
                 <button
                   onClick={() => setSelected(cat)}
-                  className="block w-full text-left p-3"
+                  className="block w-full p-2.5 text-left"
                 >
                   <div className="flex items-baseline justify-between gap-2 pr-16">
-                    <span className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                    <span className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
                       {categoryLabel(cat)}
                     </span>
                     <span className="text-xs text-slate-500 whitespace-nowrap">

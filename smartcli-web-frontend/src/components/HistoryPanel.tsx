@@ -35,7 +35,7 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear, onOpenBuilde
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3 h-full flex flex-col">
+    <div className="surface-card p-4 space-y-3 h-full flex flex-col">
       <div className="flex items-center justify-between">
         <div className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 font-semibold">
           History ({history.length})
@@ -54,10 +54,10 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear, onOpenBuilde
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         placeholder="Filter history…"
-        className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-sm
-                   text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
+        className="focus-brand min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
+                   text-slate-900 placeholder-slate-400 dark:border-navy-700 dark:bg-navy-950 dark:text-slate-100 dark:placeholder-slate-600"
       />
-      <ul className="divide-y divide-slate-200 dark:divide-slate-800 overflow-auto flex-1 -mx-1">
+      <ul className="divide-y divide-slate-200 dark:divide-navy-800 overflow-auto flex-1 -mx-1">
         {filtered.length === 0 && (
           <li className="px-1 py-2">
             {history.length === 0 ? (
@@ -80,7 +80,7 @@ export function HistoryPanel({ history, onReuse, onDelete, onClear, onOpenBuilde
           </li>
         )}
         {filtered.map((h) => (
-          <li key={h.id} className="px-2 py-2 group">
+          <li key={h.id} className="group rounded-lg px-2 py-2 transition hover:bg-slate-50 dark:hover:bg-navy-850">
             <div className="flex items-start gap-2">
               <span className="text-[10px] uppercase tracking-wide text-slate-500 mt-1">
                 {h.category}
