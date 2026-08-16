@@ -33,13 +33,14 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   ];
 
   return (
-    <header className="sticky top-0 z-30 flex h-12 items-center justify-between gap-2 border-b border-navy-800 bg-navy-950 px-3">
+    <header className="sticky top-0 z-30 flex h-11 items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-3 backdrop-blur-xl dark:border-navy-800 dark:bg-navy-950/95">
       <div className="flex min-w-0 items-center gap-2">
         {onMenuClick && (
           <button onClick={onMenuClick} className="rounded-lg p-1.5 text-slate-400 hover:bg-navy-800 hover:text-slate-200 lg:hidden" aria-label="Open menu">
             <Menu className="h-5 w-5" />
           </button>
         )}
+        <img src="/Header_logo.png" alt="SmartCLI" className="h-7 w-auto object-contain lg:hidden" />
         <button
           onClick={openPalette}
           className="hidden w-64 items-center gap-2 rounded-lg border border-navy-700 bg-navy-850 px-3 py-1.5 text-slate-500 transition hover:border-navy-600 hover:text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 md:flex"

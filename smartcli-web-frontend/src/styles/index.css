@@ -21,11 +21,14 @@
 
   body {
     @apply bg-navy-900 text-slate-100 min-h-screen;
+    background-image: radial-gradient(circle at 50% -18rem, rgba(0, 217, 245, 0.055), transparent 34rem);
+    background-attachment: fixed;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   .light body {
     @apply bg-slate-50 text-slate-900;
+    background-image: radial-gradient(circle at 50% -18rem, rgba(14, 165, 233, 0.08), transparent 34rem);
   }
 
   .light .bg-navy-950,
@@ -38,10 +41,27 @@
     background-color: #f1f5f9 !important;
   }
 
+  .light .hover\:bg-navy-800:hover,
+  .light .hover\:bg-navy-750:hover,
+  .light .hover\:bg-navy-700:hover {
+    background-color: #e2e8f0 !important;
+  }
+
+  .light .hover\:text-slate-100:hover,
+  .light .hover\:text-slate-200:hover,
+  .light .hover\:text-slate-300:hover {
+    color: #0f172a !important;
+  }
+
   .light .border-navy-800,
   .light .border-navy-700,
   .light .border-navy-600 {
-    border-color: #cbd5e1 !important;
+    border-color: #a8b5c5 !important;
+  }
+
+  .light .border-slate-200,
+  .light .border-slate-300 {
+    border-color: #b8c3d1 !important;
   }
 
   .light .text-slate-100,
@@ -52,6 +72,31 @@
 
   .light .text-slate-400 {
     color: #475569 !important;
+  }
+
+  .light .text-cyan-300,
+  .light .text-cyan-400,
+  .light .text-cyan-500,
+  .light .text-sky-300,
+  .light .text-sky-400,
+  .light .text-sky-500,
+  .light .text-sky-600,
+  .light .text-sky-700 {
+    color: #256580 !important;
+  }
+
+  .light .bg-cyan-500\/10,
+  .light .bg-cyan-500\/15,
+  .light .bg-sky-100,
+  .light .bg-sky-200 {
+    background-color: #dcebf0 !important;
+  }
+
+  .light .border-cyan-500\/20,
+  .light .border-cyan-500\/50,
+  .light .border-sky-300,
+  .light .border-sky-400 {
+    border-color: #79a9b8 !important;
   }
 
   ::-webkit-scrollbar {
@@ -77,6 +122,24 @@
 
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  }
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-navy-700 dark:bg-navy-850 dark:shadow-inner-highlight;
+  }
+
+  .page-title {
+    @apply text-lg font-semibold tracking-tight text-slate-950 dark:text-slate-100;
+  }
+
+  .page-description {
+    @apply max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400;
+  }
+
+  .focus-brand {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-navy-900;
   }
 }
 

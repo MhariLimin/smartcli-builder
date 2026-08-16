@@ -11,7 +11,7 @@ export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-navy-900 flex flex-col">
+    <div className="min-h-screen bg-transparent flex flex-col">
       <Header onMenuClick={() => setMobileOpen(true)} />
 
       <div className="flex flex-1 overflow-hidden">
@@ -56,7 +56,7 @@ export function AppShell() {
             'min-w-0'
           )}
         >
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+          <div className="mx-auto w-full max-w-5xl px-4 py-4 sm:px-5 sm:py-5">
             <Outlet />
           </div>
         </main>

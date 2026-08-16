@@ -48,25 +48,23 @@ export function Sidebar({ collapsed, onToggle, onClose }: SidebarProps) {
       aria-label="Main navigation"
       className={cn(
         'flex flex-col h-full bg-navy-900 border-r border-navy-800 transition-all duration-200 overflow-hidden',
-        collapsed ? 'w-14' : 'w-56'
+        collapsed ? 'w-12' : 'w-52'
       )}
     >
       {/* Brand and collapse control */}
       <button
         onClick={onToggle}
         className={cn(
-          'hidden lg:flex h-14 items-center rounded-xl px-2 text-left hover:bg-navy-800/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500',
-          collapsed ? 'mx-auto w-10 justify-center' : 'mx-2 gap-2'
+          'hidden lg:flex h-12 items-center overflow-hidden rounded-xl text-left hover:bg-navy-800/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500',
+          collapsed ? 'mx-auto w-10 justify-start px-1' : 'mx-2 px-2'
         )}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        <img src="/Header_logo.png" alt="" className="h-7 w-7 rounded-md object-cover object-left" />
-        {!collapsed && (
-          <span className="min-w-0">
-            <span className="block text-sm font-semibold text-slate-100">SmartCLI</span>
-            <span className="block text-[10px] text-slate-500">Collapse navigation</span>
-          </span>
-        )}
+        <img
+          src="/Header_logo.png"
+          alt="SmartCLI"
+          className={cn('h-7 max-w-none object-contain object-left', collapsed ? 'w-[73px]' : 'w-auto max-w-[156px]')}
+        />
       </button>
 
       {/* Nav groups */}
@@ -180,7 +178,7 @@ function SidebarItem({
       title={collapsed ? item.label : undefined}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors duration-100',
+          'flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors duration-100',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500',
           isActive
             ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20'

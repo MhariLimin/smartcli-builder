@@ -11,7 +11,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, actions, badge, className }: PageHeaderProps) {
   return (
-    <div className={cn('flex items-start justify-between gap-4 pb-4 border-b border-navy-800', className)}>
+    <div className={cn('flex items-start justify-between gap-4 border-b border-slate-200 pb-3 dark:border-navy-800', className)}>
       <div className="min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <h1 className="text-lg font-semibold text-slate-100 truncate">{title}</h1>
