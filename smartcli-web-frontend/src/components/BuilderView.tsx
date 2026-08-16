@@ -10,6 +10,7 @@ import { SaveToFolderModal } from './SaveToFolderModal';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
 import { SuggestionList } from './SuggestionList';
 import { CheckIcon, CopyIcon, WarningIcon } from './icons';
+import { FolderPlus, Share2 } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import type { HistoryEntry, PlaceholderInfo, Suggestion } from '../types';
 
@@ -663,30 +664,10 @@ export function BuilderView({
     activeIndex >= 0 ? `${SUGGESTION_OPTION_PREFIX}-${activeIndex}` : undefined;
 
   return (
-    <div className="space-y-5 sm:space-y-6 min-w-0">
-        <header className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-2xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">
-            Command workspace
-          </div>
-          <h1 className="page-title">Build a command</h1>
-          <p className="page-description">
-            Type the command directly or pick from suggestions; placeholder slots
-            become inputs that substitute in place. <span className="text-slate-800 dark:text-slate-200">Copy</span>{' '}
-            also saves to history. Press{' '}
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200">
-              Shift
-            </kbd>
-            <span className="text-slate-500"> + </span>
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200">
-              ?
-            </kbd>{' '}
-            for keyboard shortcuts.
-          </p>
-        </header>
-
+    <div className="min-w-0 space-y-3">
         <div className="surface-card overflow-hidden shadow-lg shadow-slate-200/30 dark:shadow-navy-950/30">
           {remainingPlaceholders.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/80 px-3 py-2 dark:border-navy-700 dark:bg-navy-850 sm:px-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/80 px-3 py-1.5 dark:border-navy-700 dark:bg-navy-850">
               <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
                 Placeholder input
               </span>
@@ -700,7 +681,7 @@ export function BuilderView({
                   role="radio"
                   aria-checked={placeholderInputMode === 'form'}
                   onClick={() => setPlaceholderInputMode('form')}
-                  className={`min-h-9 rounded px-3 text-xs font-medium transition motion-reduce:transition-none ${
+                  className={`h-7 rounded px-2 text-[11px] font-medium transition motion-reduce:transition-none ${
                     placeholderInputMode === 'form'
                       ? 'bg-electric-500 text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-navy-800'
@@ -716,7 +697,7 @@ export function BuilderView({
                     setPlaceholderInputMode('inline');
                     setShowSuggestions(false);
                   }}
-                  className={`min-h-9 rounded px-3 text-xs font-medium transition motion-reduce:transition-none ${
+                  className={`h-7 rounded px-2 text-[11px] font-medium transition motion-reduce:transition-none ${
                     placeholderInputMode === 'inline'
                       ? 'bg-electric-500 text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-navy-800'
@@ -735,7 +716,7 @@ export function BuilderView({
               onChange={(e) => onCommandChange(e.target.value)}
               onKeyDown={onInputKeyDown}
               placeholder="Start typing… e.g. 'kubectl get'"
-              className={`relative w-full min-h-14 bg-white dark:bg-navy-950 px-3 sm:px-4 py-3 pr-14 font-mono text-base
+              className={`relative h-9 w-full bg-white px-3 pr-9 font-mono text-xs dark:bg-navy-950
                          placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none
                          ${
                            inlineModeActive
@@ -753,8 +734,8 @@ export function BuilderView({
             />
             {inlineModeActive && (
               <div
-                className="pointer-events-none absolute inset-y-0 left-0 right-14 flex items-center overflow-hidden whitespace-pre px-3
-                           font-mono text-base text-slate-900 dark:text-slate-100 sm:px-4"
+                className="pointer-events-none absolute inset-y-0 left-0 right-9 flex items-center overflow-hidden whitespace-pre px-3
+                           font-mono text-xs text-slate-900 dark:text-slate-100"
                 aria-label="Editable command placeholders"
               >
                 {inlineCommandSegments.map((segment, index) =>
@@ -787,7 +768,7 @@ export function BuilderView({
                 title="Clear input"
                 aria-label="Clear input"
                 className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center
-                           h-11 w-11 rounded text-slate-500 dark:text-slate-400
+                           h-7 w-7 rounded text-slate-500 dark:text-slate-400
                            hover:bg-slate-100 dark:hover:bg-navy-800
                            hover:text-slate-900 dark:hover:text-slate-100 transition"
               >
@@ -808,11 +789,11 @@ export function BuilderView({
             />
           )}
           {!showSuggestions && (
-            <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500 dark:border-navy-800">
+            <div className="border-t border-slate-100 px-3 py-1.5 text-[11px] text-slate-500 dark:border-navy-800">
               Suggestions hidden —{' '}
               <button
                 onClick={() => setShowSuggestions(true)}
-                className="min-h-11 px-1 underline hover:text-sky-600 dark:hover:text-sky-300"
+                className="px-1 py-1 underline hover:text-sky-600 dark:hover:text-sky-300"
               >
                 show again
               </button>
@@ -843,12 +824,14 @@ export function BuilderView({
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 px-3 sm:px-4 py-3 border-t border-slate-200 dark:border-navy-700 bg-slate-50/80 dark:bg-navy-850">
+          <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-slate-50/80 px-3 py-2 dark:border-navy-700 dark:bg-navy-850 sm:px-4">
             <button
               onClick={onCopy}
               disabled={!trimmedCommand}
               aria-live="polite"
-              className={`inline-flex min-h-11 w-full sm:w-auto items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium
+              title={copied ? 'Command copied' : 'Copy command'}
+              aria-label={copied ? 'Command copied' : 'Copy command'}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-lg
                          text-white transition disabled:bg-slate-200 dark:disabled:bg-slate-700 disabled:text-slate-500
                          ${
                            copied
@@ -861,12 +844,14 @@ export function BuilderView({
               ) : (
                 <CopyIcon className="h-4 w-4" />
               )}
-              {copied ? 'Copied!' : 'Copy command'}
+              <span className="sr-only">{copied ? 'Command copied' : 'Copy command'}</span>
             </button>
             <button
               onClick={() => setSaveModalOpen(true)}
               disabled={!trimmedCommand}
-              className="min-h-11 w-full sm:w-auto px-3 py-2 rounded text-sm font-medium border
+              title="Save to folder"
+              aria-label="Save to folder"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border
                          border-slate-300 dark:border-slate-700
                          bg-white dark:bg-navy-800
                          text-slate-800 dark:text-slate-200
@@ -874,13 +859,15 @@ export function BuilderView({
                          disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400
                          transition"
             >
-              Save to folder…
+              <FolderPlus className="h-4 w-4" />
+              <span className="sr-only">Save to folder</span>
             </button>
             <button
               onClick={onShare}
               disabled={!trimmedCommand}
-              title="Copy a share link to the clipboard"
-              className="min-h-11 w-full sm:w-auto px-3 py-2 rounded text-sm font-medium border
+              title="Copy share link"
+              aria-label="Copy share link"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border
                          border-slate-300 dark:border-slate-700
                          bg-white dark:bg-navy-800
                          text-slate-800 dark:text-slate-200
@@ -888,9 +875,10 @@ export function BuilderView({
                          disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400
                          transition"
             >
-              Share link
+              <Share2 className="h-4 w-4" />
+              <span className="sr-only">Copy share link</span>
             </button>
-            <div className="w-full sm:w-auto sm:ml-auto text-xs">
+            <div className="ml-auto min-w-0 text-right text-[11px]">
               {hasUnfilled && (
                 <span className="text-amber-700 dark:text-amber-300">
                   placeholders still empty — fill above or edit the line directly

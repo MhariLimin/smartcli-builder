@@ -52,7 +52,7 @@ export function BuilderPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Builder"
         description="Compose commands with live suggestions, typed placeholders, and a review-first copy workflow."

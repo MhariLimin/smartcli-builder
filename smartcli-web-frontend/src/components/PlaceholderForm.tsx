@@ -53,14 +53,14 @@ export function PlaceholderForm({ placeholders, values, onChange }: Props) {
   };
 
   return (
-    <div className="space-y-3 bg-slate-50 px-3 py-3 dark:bg-slate-900 sm:px-4">
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+    <div className="space-y-2 bg-slate-50 px-3 py-2 dark:bg-slate-900">
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
         Fill placeholders{' '}
         <span className="font-normal normal-case text-slate-500">
           - the command above updates as you type
         </span>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-2">
         {placeholders.map((p) => (
           <SlotInput
             key={p.slot}

@@ -72,7 +72,7 @@ export function SuggestionList({
     return (
       <div className="divide-y divide-slate-200 dark:divide-slate-800" aria-label="Loading suggestions">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="px-4 py-2.5">
+          <div key={i} className="px-3 py-1.5">
             <div className="flex items-start gap-3">
               <Skeleton className="h-5 w-16 shrink-0" />
               <div className="min-w-0 flex-1 space-y-2">
@@ -97,14 +97,14 @@ export function SuggestionList({
   return (
     <div>
       {headerLabel && (
-        <div className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wide text-slate-500">
+        <div className="px-3 pb-1 pt-2 text-[9px] uppercase tracking-wide text-slate-500">
           {headerLabel}
         </div>
       )}
       <ul
         role="listbox"
         id={listboxId}
-        className="divide-y divide-slate-200 dark:divide-slate-800 max-h-96 overflow-auto"
+        className="max-h-72 divide-y divide-slate-200 overflow-auto dark:divide-slate-800"
       >
         {items.map((s, i) => {
           const colorClass =
@@ -119,20 +119,20 @@ export function SuggestionList({
               onClick={() => onSelect(s)}
               onMouseEnter={() => onHover?.(i)}
               className={
-                'cursor-pointer px-4 py-2 transition flex items-start gap-3 ' +
+                'flex cursor-pointer items-start gap-2 px-3 py-1.5 transition ' +
                 (isActive ? 'bg-slate-100 dark:bg-slate-800' : 'hover:bg-slate-200/70 dark:hover:bg-slate-800/70')
               }
             >
               <span
-                className={`text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded border ${colorClass}`}
+                className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${colorClass}`}
               >
                 {s.category}
               </span>
               <div className="flex-1 min-w-0">
-                <div className="font-mono text-sm text-slate-900 dark:text-slate-100 break-all">
+                <div className="break-all font-mono text-xs text-slate-900 dark:text-slate-100">
                   {renderTokens(s.text)}
                 </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{s.description}</div>
+                <div className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-400">{s.description}</div>
               </div>
               <span className="text-[10px] uppercase tracking-wide text-slate-500 self-center">
                 {s.kind === 'TEMPLATE' ? 'full' : 'next'}
