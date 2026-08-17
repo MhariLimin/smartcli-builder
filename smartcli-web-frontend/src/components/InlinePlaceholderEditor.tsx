@@ -47,11 +47,9 @@ export function InlinePlaceholderEditor({
       if (!rect) return;
       const width = Math.min(352, window.innerWidth - 24);
       const left = Math.min(Math.max(12, rect.left), window.innerWidth - width - 12);
-      const estimatedHeight = 300;
-      const top =
-        rect.bottom + estimatedHeight + 20 <= window.innerHeight
-          ? rect.bottom + 8
-          : Math.max(12, rect.top - estimatedHeight - 8);
+      // Keep the editor anchored below the token. A constrained scroll area is
+      // less disorienting than flipping the editor far above the command bar.
+      const top = rect.bottom + 8;
       setPosition({ left, top });
     };
     updatePosition();
@@ -142,7 +140,12 @@ export function InlinePlaceholderEditor({
             onKeyDown={handleDialogKeyDown}
             className="fixed z-50 w-[min(22rem,calc(100vw-1.5rem))] rounded-lg border border-slate-200 bg-white p-3
                        shadow-xl transition motion-reduce:transition-none dark:border-slate-700 dark:bg-slate-900"
-            style={{ left: position.left, top: position.top }}
+            style={{
+              left: position.left,
+              top: position.top,
+              maxHeight: `calc(100vh - ${position.top + 12}px)`
+            }}
+            data-inline-placeholder-popover
           >
             <SlotInput
               placeholder={placeholder}

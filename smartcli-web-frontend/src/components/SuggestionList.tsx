@@ -1,8 +1,9 @@
+import { Fragment } from 'react';
 import type { Suggestion } from '../types';
 import { Skeleton, SkeletonBar } from './Skeleton';
 
 interface Props {
-  items: Suggestion[];
+  items: Array<Suggestion & { intent?: string }>;
   loading: boolean;
   onSelect: (suggestion: Suggestion) => void;
   // Small label rendered above the list (e.g. "Try one of these to get started"
@@ -111,6 +112,12 @@ export function SuggestionList({
             categoryColors[s.category] ?? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700';
           const isActive = i === activeIndex;
           return (
+            <Fragment key={`${s.text}-${i}`}>
+            {s.intent && s.intent !== items[i - 1]?.intent && (
+              <li key={`${s.intent}-heading`} role="presentation" className="bg-slate-50 px-3 py-1 text-[9px] font-semibold uppercase tracking-widest text-slate-500 dark:bg-navy-900">
+                {s.intent}
+              </li>
+            )}
             <li
               key={`${s.text}-${i}`}
               id={`${optionIdPrefix}-${i}`}
@@ -138,6 +145,7 @@ export function SuggestionList({
                 {s.kind === 'TEMPLATE' ? 'full' : 'next'}
               </span>
             </li>
+            </Fragment>
           );
         })}
       </ul>

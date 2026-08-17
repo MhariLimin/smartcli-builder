@@ -126,6 +126,9 @@
 }
 
 @layer components {
+  [data-inline-placeholder-popover] {
+    overflow-y: auto;
+  }
   .surface-card {
     @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-navy-700 dark:bg-navy-850 dark:shadow-inner-highlight;
   }

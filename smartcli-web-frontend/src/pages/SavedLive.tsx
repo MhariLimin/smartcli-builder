@@ -354,6 +354,7 @@ export function SavedPage() {
                     message="Build a command, then use Save to folder to keep it in this library."
                     actionLabel="Build one"
                     onAction={goToBuilder}
+                    secondary={<code>Example: kubectl get pods -n default</code>}
                   />
                 )
               )}
@@ -583,7 +584,7 @@ function SavedRow({
             onChange={(e) => setLabelDraft(e.target.value)}
             onBlur={commitLabel}
             onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLInputElement).blur()}
-            placeholder="Add a label…"
+            placeholder="Optional display name"
             className="w-full bg-transparent border-0 px-0 py-0 text-sm font-medium
                        text-slate-900 dark:text-slate-100
                        placeholder-slate-400 dark:placeholder-slate-600

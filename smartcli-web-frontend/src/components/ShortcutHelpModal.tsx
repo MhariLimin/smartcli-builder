@@ -3,9 +3,10 @@ import { useEffect } from 'react';
 interface Props {
   isMac: boolean;
   onClose: () => void;
+  onStartGuide: () => void;
 }
 
-export function ShortcutHelpModal({ isMac, onClose }: Props) {
+export function ShortcutHelpModal({ isMac, onClose, onStartGuide }: Props) {
   const mod = isMac ? '⌘' : 'Ctrl';
 
   useEffect(() => {
@@ -57,6 +58,15 @@ export function ShortcutHelpModal({ isMac, onClose }: Props) {
         <p className="text-xs text-slate-500">
           Tab also moves between placeholder inputs and the Copy / Save buttons.
         </p>
+        <div className="border-t border-slate-200 pt-3 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={onStartGuide}
+            className="focus-brand rounded-lg border border-cyan-600/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-800 hover:bg-cyan-500/20 dark:text-cyan-300"
+          >
+            Restart guided first run
+          </button>
+        </div>
       </div>
     </div>
   );

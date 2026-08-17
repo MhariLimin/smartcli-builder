@@ -10,15 +10,21 @@ import { SaveToFolderModal } from './SaveToFolderModal';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
 import { SuggestionList } from './SuggestionList';
 import { CheckIcon, CopyIcon, WarningIcon } from './icons';
-import { FolderPlus, Share2 } from 'lucide-react';
+import { FolderPlus, HelpCircle, Share2 } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import type { HistoryEntry, PlaceholderInfo, Suggestion } from '../types';
+import { FirstRunGuide, type StarterTask } from './FirstRunGuide';
 
 const SUGGESTION_LISTBOX_ID = 'builder-suggestions';
 const SUGGESTION_OPTION_PREFIX = 'builder-suggestion';
 
 // How long the Copy button shows its "Copied!" success state before reverting.
 const COPIED_FLASH_MS = 1500;
+const FIRST_RUN_KEY = 'smartcli.firstRun.completed.v1';
+
+function trackFirstRun(event: 'guide_started' | 'template_selected' | 'command_copied' | 'command_saved' | 'guide_skipped') {
+  window.dispatchEvent(new CustomEvent('smartcli:first-run', { detail: { event } }));
+}
 
 // Detect Mac for the Cmd-Enter vs Ctrl-Enter shortcut. navigator.platform is
 // deprecated but still adequate and synchronous; navigator.userAgentData is
@@ -30,48 +36,48 @@ const isMac =
 // Shown when the input is empty so first-time users see something to click
 // instead of a "no suggestions" message. These commands are real catalog
 // entries; clicking one drives the same onSelect flow as a backend suggestion.
-const STARTER_SUGGESTIONS: Suggestion[] = [
+const STARTER_SUGGESTIONS: Array<Suggestion & { intent: string }> = [
   {
     text: 'kubectl get pods -n <namespace>',
     description: 'List pods in a namespace',
     category: 'kubectl',
     placeholders: ['namespace'],
-    kind: 'TEMPLATE'
+    kind: 'TEMPLATE', intent: 'Inspect'
   },
   {
     text: 'docker ps',
     description: 'List running containers',
     category: 'docker',
     placeholders: [],
-    kind: 'TEMPLATE'
+    kind: 'TEMPLATE', intent: 'Inspect'
   },
   {
     text: 'git status',
     description: 'Show working tree status',
     category: 'git',
     placeholders: [],
-    kind: 'TEMPLATE'
+    kind: 'TEMPLATE', intent: 'Diagnose'
   },
   {
     text: 'git log --oneline -n 20',
     description: 'Recent commits, one line each',
     category: 'git',
     placeholders: [],
-    kind: 'TEMPLATE'
+    kind: 'TEMPLATE', intent: 'Diagnose'
   },
   {
     text: 'source ~/.bashrc',
     description: 'Reload bash configuration',
     category: 'shell',
     placeholders: [],
-    kind: 'TEMPLATE'
+    kind: 'TEMPLATE', intent: 'Recover'
   },
   {
     text: 'claude',
     description: 'Start the Claude Code CLI',
     category: 'claude',
     placeholders: [],
-    kind: 'TEMPLATE'
+    kind: 'TEMPLATE', intent: 'Explore'
   }
 ];
 
@@ -261,6 +267,11 @@ export function BuilderView({
   const [activeIndex, setActiveIndex] = useState(-1);
   const [helpOpen, setHelpOpen] = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(
+    () => !initialTemplate && localStorage.getItem(FIRST_RUN_KEY) !== 'true'
+  );
+  const [selectedTask, setSelectedTask] = useState<StarterTask | null>(null);
+  const [guideComplete, setGuideComplete] = useState(false);
   const { placeholderInputMode, setPlaceholderInputMode } = useUiPrefs();
   // All transient success/error feedback now goes through the shared toast
   // channel instead of five separate inline-flash states + timers.
@@ -270,6 +281,12 @@ export function BuilderView({
   // actual copy/history side effect. Reverts after COPIED_FLASH_MS.
   const [copied, setCopied] = useState(false);
   const copiedTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (guideOpen) trackFirstRun('guide_started');
+    // Initial impression only; the event never includes command text.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const debounceRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -377,7 +394,7 @@ export function BuilderView({
   }, [command]);
 
   const trimmedCommand = command.trim();
-  const hasUnfilled = remainingPlaceholders.length > 0;
+  const hasUnfilled = /<[^>]+>/.test(command);
   const isFreeForm = !activeTemplate && trimmedCommand.length > 0;
 
   // Read-only "Will copy" preview. Shown only when highlighting adds
@@ -404,6 +421,38 @@ export function BuilderView({
     }
     setActiveIndex(-1);
   }, []);
+
+  const completeGuide = useCallback(
+    (event: 'command_copied' | 'command_saved' | 'guide_skipped') => {
+      localStorage.setItem(FIRST_RUN_KEY, 'true');
+      trackFirstRun(event);
+      if (event === 'guide_skipped') {
+        setGuideOpen(false);
+        setSelectedTask(null);
+      } else {
+        setGuideComplete(true);
+      }
+    },
+    []
+  );
+
+  const startGuide = useCallback(() => {
+    localStorage.removeItem(FIRST_RUN_KEY);
+    setSelectedTask(null);
+    setGuideComplete(false);
+    setGuideOpen(true);
+    setHelpOpen(false);
+    trackFirstRun('guide_started');
+  }, []);
+
+  const selectGuideTask = useCallback(
+    (task: StarterTask) => {
+      setSelectedTask(task);
+      onSelectSuggestion(task.suggestion);
+      trackFirstRun('template_selected');
+    },
+    [onSelectSuggestion]
+  );
 
   // Live placeholder substitution. Position-tracked so we never re-write
   // unrelated text that happens to share characters with the value being
@@ -525,13 +574,14 @@ export function BuilderView({
       return;
     }
     flashCopied();
+    if (guideOpen && selectedTask && !hasUnfilled) completeGuide('command_copied');
     if (!addHistory) {
       toast.success('Copied to clipboard');
       return;
     }
     const entry = await addHistory(command, activeCategory || 'misc');
     toast.success(entry ? 'Copied — saved to history' : 'Copied to clipboard');
-  }, [trimmedCommand, command, activeCategory, addHistory, toast, flashCopied]);
+  }, [trimmedCommand, command, activeCategory, addHistory, toast, flashCopied, guideOpen, selectedTask, hasUnfilled, completeGuide]);
 
   // Wipe everything that follows from a non-empty command in one click:
   // the command itself, the template lock, the placeholder form state, and
@@ -665,6 +715,20 @@ export function BuilderView({
 
   return (
     <div className="min-w-0 space-y-3">
+        {guideOpen && (
+          <FirstRunGuide
+            selectedTask={selectedTask}
+            hasUnfilled={hasUnfilled}
+            completed={guideComplete}
+            onSelect={selectGuideTask}
+            onSkip={() => completeGuide('guide_skipped')}
+            onFinish={() => {
+              setGuideOpen(false);
+              setSelectedTask(null);
+              setGuideComplete(false);
+            }}
+          />
+        )}
         <div className="surface-card overflow-hidden shadow-lg shadow-slate-200/30 dark:shadow-navy-950/30">
           {remainingPlaceholders.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/80 px-3 py-1.5 dark:border-navy-700 dark:bg-navy-850">
@@ -878,6 +942,15 @@ export function BuilderView({
               <Share2 className="h-4 w-4" />
               <span className="sr-only">Copy share link</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setHelpOpen(true)}
+              title="Keyboard help and guided tour"
+              aria-label="Open help"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-navy-800 dark:text-slate-300 dark:hover:bg-navy-700 dark:hover:text-slate-100"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
             <div className="ml-auto min-w-0 text-right text-[11px]">
               {hasUnfilled && (
                 <span className="text-amber-700 dark:text-amber-300">
@@ -923,14 +996,23 @@ export function BuilderView({
           )}
         </div>
 
-      {helpOpen && <ShortcutHelpModal isMac={isMac} onClose={() => setHelpOpen(false)} />}
+      {helpOpen && (
+        <ShortcutHelpModal
+          isMac={isMac}
+          onClose={() => setHelpOpen(false)}
+          onStartGuide={startGuide}
+        />
+      )}
       {saveModalOpen && trimmedCommand && (
         <SaveToFolderModal
           command={command}
           category={activeCategory}
           addHistory={addHistory}
           onClose={() => setSaveModalOpen(false)}
-          onSaved={() => toast.success('Saved to folder')}
+          onSaved={() => {
+            toast.success('Saved to folder');
+            if (guideOpen && selectedTask && !hasUnfilled) completeGuide('command_saved');
+          }}
         />
       )}
     </div>

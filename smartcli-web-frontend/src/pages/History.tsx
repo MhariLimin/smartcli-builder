@@ -115,7 +115,7 @@ export function HistoryPage() {
           description={
             searchQuery
               ? 'Try a different search term.'
-              : 'Commands copied in the Builder are recorded here.'
+              : 'Copy a reviewed command such as “git status” in Builder and it will appear here.'
           }
           action={searchQuery ? undefined : { label: 'Open Builder', onClick: () => navigate('/builder') }}
         />
