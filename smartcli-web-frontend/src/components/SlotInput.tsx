@@ -31,6 +31,12 @@ export function SlotInput({ placeholder: p, value, error, onChange }: SlotInputP
         </span>
       )}
       <span className="text-[11px] text-slate-600 dark:text-slate-400">{p.label}</span>
+      <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">required</span>
+      {isSensitivePlaceholder(p) && (
+        <span className="rounded border border-amber-500/40 bg-amber-500/10 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+          sensitive
+        </span>
+      )}
     </div>
   );
 
@@ -187,6 +193,10 @@ export function SlotInput({ placeholder: p, value, error, onChange }: SlotInputP
       {errorEl}
     </label>
   );
+}
+
+function isSensitivePlaceholder(placeholder: PlaceholderInfo): boolean {
+  return /password|passphrase|secret|token|private-key/i.test(`${placeholder.name} ${placeholder.label}`);
 }
 
 export function validatePlaceholderValue(p: PlaceholderInfo, value: string): string | null {

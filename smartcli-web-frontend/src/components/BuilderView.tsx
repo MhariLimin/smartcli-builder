@@ -10,10 +10,11 @@ import { SaveToFolderModal } from './SaveToFolderModal';
 import { ShortcutHelpModal } from './ShortcutHelpModal';
 import { SuggestionList } from './SuggestionList';
 import { CheckIcon, CopyIcon, WarningIcon } from './icons';
-import { FolderPlus, HelpCircle, Share2 } from 'lucide-react';
+import { BookOpen, FolderPlus, HelpCircle, Share2, Wrench } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import type { HistoryEntry, PlaceholderInfo, Suggestion } from '../types';
 import { FirstRunGuide, type StarterTask } from './FirstRunGuide';
+import { CommandLearningPanel } from './CommandLearningPanel';
 
 const SUGGESTION_LISTBOX_ID = 'builder-suggestions';
 const SUGGESTION_OPTION_PREFIX = 'builder-suggestion';
@@ -21,6 +22,7 @@ const SUGGESTION_OPTION_PREFIX = 'builder-suggestion';
 // How long the Copy button shows its "Copied!" success state before reverting.
 const COPIED_FLASH_MS = 1500;
 const FIRST_RUN_KEY = 'smartcli.firstRun.completed.v1';
+const BUILDER_MODE_KEY = 'smartcli.builder.mode.v1';
 
 function trackFirstRun(event: 'guide_started' | 'template_selected' | 'command_copied' | 'command_saved' | 'guide_skipped') {
   window.dispatchEvent(new CustomEvent('smartcli:first-run', { detail: { event } }));
@@ -272,6 +274,9 @@ export function BuilderView({
   );
   const [selectedTask, setSelectedTask] = useState<StarterTask | null>(null);
   const [guideComplete, setGuideComplete] = useState(false);
+  const [presentationMode, setPresentationMode] = useState<'compose' | 'learn'>(() =>
+    localStorage.getItem(BUILDER_MODE_KEY) === 'learn' ? 'learn' : 'compose'
+  );
   const { placeholderInputMode, setPlaceholderInputMode } = useUiPrefs();
   // All transient success/error feedback now goes through the shared toast
   // channel instead of five separate inline-flash states + timers.
@@ -715,6 +720,15 @@ export function BuilderView({
 
   return (
     <div className="min-w-0 space-y-3">
+        <div className="flex justify-end">
+          <div className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5 dark:border-navy-700 dark:bg-navy-950" role="radiogroup" aria-label="Builder presentation mode">
+            {(['compose', 'learn'] as const).map((mode) => (
+              <button key={mode} type="button" role="radio" aria-checked={presentationMode === mode} onClick={() => { setPresentationMode(mode); localStorage.setItem(BUILDER_MODE_KEY, mode); }} className={`focus-brand inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold capitalize transition ${presentationMode === mode ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-navy-800'}`}>
+                {mode === 'compose' ? <Wrench className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}{mode}
+              </button>
+            ))}
+          </div>
+        </div>
         {guideOpen && (
           <FirstRunGuide
             selectedTask={selectedTask}
@@ -995,6 +1009,10 @@ export function BuilderView({
             </div>
           )}
         </div>
+
+      {presentationMode === 'learn' && (
+        <CommandLearningPanel template={activeTemplate} command={command} category={activeCategory} />
+      )}
 
       {helpOpen && (
         <ShortcutHelpModal
